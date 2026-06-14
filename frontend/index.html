@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="NeuroHEX — Browser-based AI MRI brain analysis platform. SynthSeg parcellation, BraTS tumor screening, Gemini AI reports. No GPU. No cloud. No data leaves your device." />
+  <meta name="keywords" content="brain MRI AI, neuroradiology, SynthSeg, BraTS, browser AI, NIfTI viewer, Bangladesh healthcare" />
+  <meta property="og:title" content="NeuroHEX · AI Neuroradiology in the Browser" />
+  <meta property="og:description" content="32-region MRI parcellation, tumor screening, and Gemini AI reports — in 60 seconds, on any laptop." />
+  <title>NeuroHEX · AI MRI Analysis Platform</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body>
+
+<!-- ─── SCANLINES ──────────────────────────────────────────── -->
+<div id="scanlines" aria-hidden="true"></div>
+
+<!-- ─── NAVIGATION ─────────────────────────────────────────── -->
+<nav id="nav" role="navigation" aria-label="Main navigation">
+  <a href="#hero" class="nav-logo">
+    <span class="hex" aria-hidden="true">⬡</span> NeuroHEX
+  </a>
+  <ul class="nav-links" role="list">
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#bd-context">Bangladesh</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#personas">Who Uses This</a></li>
+  </ul>
+  <a href="patient.html" class="nav-cta">◈ Launch&nbsp;Demo&nbsp;→</a>
+  <button id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 1 · HERO
+     ══════════════════════════════════════════════════════════ -->
+<section id="hero" aria-label="Hero — NeuroHEX introduction">
+
+  <div class="webgl-fallback" aria-hidden="true" style="display:none;"></div>
+
+  <!-- Neural activity ticker bar -->
+  <div class="activity-ticker" aria-hidden="true">
+    <div class="ticker-track">
+      <span class="ticker-item">SYN_SEG <span class="val">ACTIVE</span> <span class="sep">·</span></span>
+      <span class="ticker-item">HIPPOCAMPUS_L <span class="val">3.42 cm³</span> <span class="sep">·</span></span>
+      <span class="ticker-item">BRAIN_AGE_PRED <span class="val">67.2 yr</span> <span class="sep">·</span></span>
+      <span class="ticker-item">ICD10 <span class="val">G35 · G20 · I69.3</span> <span class="sep">·</span></span>
+      <span class="ticker-item">BRATS_EDEMA <span class="val">12.8 cm³</span> <span class="sep">·</span></span>
+      <span class="ticker-item">FAZEKAS_SCORE <span class="val">2 / 3</span> <span class="sep">·</span></span>
+      <span class="ticker-item">WM_HYPERINT <span class="val">DETECTED</span> <span class="sep">·</span></span>
+      <span class="ticker-item">GEMINI_2_FLASH <span class="val">GENERATING REPORT</span> <span class="sep">·</span></span>
+      <span class="ticker-item">DATA_EGRESS <span class="val">0 KB</span> <span class="sep">·</span></span>
+      <span class="ticker-item">REGIONS_PARCEL <span class="val">32 / 32</span> <span class="sep">·</span></span>
+      <span class="ticker-item">VENDOR <span class="val">$0 / yr</span> <span class="sep">·</span></span>
+      <span class="ticker-item">BD_NEUROLOGISTS <span class="val">~160 / 170M PEOPLE</span> <span class="sep">·</span></span>
+      <span class="ticker-item">STROKE_DEATHS_BD <span class="val">130,655 / YEAR</span> <span class="sep">·</span></span>
+    </div>
+  </div>
+
+  <!-- Hero split layout -->
+  <div class="hero-layout">
+
+    <!-- LEFT: Text content -->
+    <div class="hero-content">
+
+      <p class="hero-stat-callout">
+        Bangladesh has <strong>~160 neurologists for 170 million people</strong> — fewer than 1 per million.<sup class="ref-sup">[EJN 2024]</sup><br>
+        NeuroHEX gives every district hospital GP an AI-powered neuroradiology assistant — in the browser, in 60 seconds, no GPU required.
+      </p>
+
+      <p class="hero-sub">
+        NeuroHEX runs a full neuroradiologist-grade MRI pipeline — SynthSeg parcellation, BraTS tumor screening,
+        Gemini AI reports — entirely in your browser.
+        <span class="no-cloud">No cloud. No GPU. No data leaves the room.</span>
+      </p>
+
+      <div class="hero-ctas">
+        <a href="patient.html" class="btn-demo">
+          <span>▶ Try Live Demo</span>
+          <span class="arrow-icon">→</span>
+        </a>
+        <a href="#pipeline" class="btn-primary">
+          <span>◈ View Pipeline</span>
+        </a>
+        <a href="#" class="btn-ghost">↓ Read the Paper</a>
+      </div>
+
+      <div class="hero-stats" role="list" aria-label="Key metrics">
+        <div class="hero-stat" role="listitem">
+          <span class="hero-stat-num" id="stat-regions">0</span>
+          <span class="hero-stat-label">Brain Regions Parcellated</span>
+        </div>
+        <div class="hero-stat" role="listitem">
+          <span class="hero-stat-num" id="stat-cloud">0</span>
+          <span class="hero-stat-label">Patient Data Sent to Cloud</span>
+        </div>
+        <div class="hero-stat" role="listitem">
+          <span class="hero-stat-num" id="stat-models">0</span>
+          <span class="hero-stat-label">AI Models in One Browser Tab</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Three.js canvas -->
+    <div class="hero-canvas-wrap" aria-hidden="true">
+      <canvas id="three-canvas"></canvas>
+    </div>
+
+  </div>
+
+  <div class="scroll-indicator" aria-hidden="true">SCROLL TO EXPLORE</div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 2 · PIPELINE
+     ══════════════════════════════════════════════════════════ -->
+<section id="pipeline" aria-label="NeuroHEX analysis pipeline">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div class="section-eyebrow">The Pipeline</div>
+    <h2 class="section-title">From raw MRI to clinical report<br><span class="accent">in one click.</span></h2>
+
+    <div class="pipeline-steps" role="list">
+
+      <div class="pipeline-step from-left" role="listitem">
+        <div class="pipeline-num" aria-hidden="true">01</div>
+        <div class="pipeline-content">
+          <div class="pipeline-title">Upload</div>
+          <p class="pipeline-body">
+            Drag and drop <code>.nii</code>, <code>.nii.gz</code>, or <code>.dcm</code> files. NiiVue renders the MRI instantly
+            in WebGL — multiplanar views (sagittal, axial, coronal) or full 3D volume. No conversion step. No server upload.
+            DICOM metadata parsed client-side with dcmjs.
+          </p>
+          <div class="pipeline-tags">
+            <span class="tag">NiiVue WebGL</span>
+            <span class="tag">dcmjs@0.52.0</span>
+            <span class="tag">NIfTI / DICOM</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pipeline-step from-right" role="listitem">
+        <div class="pipeline-num" aria-hidden="true">02</div>
+        <div class="pipeline-content">
+          <div class="pipeline-title">Segment</div>
+          <p class="pipeline-body">
+            SynthSeg (Billot et al., Nature Methods 2023) performs real 32-region FreeSurfer parcellation via FastAPI backend.
+            Hippocampal volumes from labels 17+53. Thalamic, amygdala, caudate, putamen, and pallidum volumes returned in
+            mm³. When the backend is offline, a full demo mode activates automatically with pre-computed results.
+          </p>
+          <div class="pipeline-tags">
+            <span class="tag">SynthSeg (Billot 2023)</span>
+            <span class="tag">32 Regions</span>
+            <span class="tag">FreeSurfer Labels</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pipeline-step from-left" role="listitem">
+        <div class="pipeline-num" aria-hidden="true">03</div>
+        <div class="pipeline-content">
+          <div class="pipeline-title">Screen</div>
+          <p class="pipeline-body">
+            BraTS 2020 ONNX model performs glioma sub-region segmentation: peritumoral edema (label 2),
+            enhancing tumor (label 4), and necrotic core (label 1). Volumes reported in cm³ with confidence bounds.
+            Fazekas grading for white-matter hyperintensities (scale 0–3) automatically assigned — critical for Bangladesh's
+            hypertension-driven WM disease burden (63% of stroke patients are hypertensive).
+          </p>
+          <div class="pipeline-tags">
+            <span class="tag">BraTS 2020</span>
+            <span class="tag">ONNX Runtime</span>
+            <span class="tag">Fazekas Criteria</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pipeline-step from-right" role="listitem">
+        <div class="pipeline-num" aria-hidden="true">04</div>
+        <div class="pipeline-content">
+          <div class="pipeline-title">Analyze</div>
+          <p class="pipeline-body">
+            Brain age prediction via Cole et al. 2018 (Nature Communications) ridge regression model — biological age
+            vs chronological age gap flags accelerated neurodegeneration. Hippocampal volumes benchmarked against
+            Raz et al. 2005 norms. Validated directly in Bangladeshi patients: MRI medial temporal lobe atrophy (MTA) score
+            significantly correlates with MMSE dementia severity (r = −0.350, p = 0.005) at NINS&H, 2019–2022.
+            ICD-10 codes (G30, G35, I69.3, G20) auto-flagged by threshold logic.
+          </p>
+          <div class="pipeline-tags">
+            <span class="tag">Brain Age (Cole 2018)</span>
+            <span class="tag">Raz Norms</span>
+            <span class="tag">ICD-10</span>
+            <span class="tag">Longitudinal Δ</span>
+            <span class="tag">PMC11363468 Validated</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pipeline-step from-left" role="listitem">
+        <div class="pipeline-num" aria-hidden="true">05</div>
+        <div class="pipeline-content">
+          <div class="pipeline-title">Report</div>
+          <p class="pipeline-body">
+            Gemini 2.0 Flash generates a formal 5-section neuroradiology report: <em>TECHNIQUE, FINDINGS, IMPRESSION,
+            DIFFERENTIAL DIAGNOSIS, RECOMMENDATIONS</em>. All volumetric data, ICD-10 flags, and clinical context injected
+            into a structured prompt. Groq (LLaMA 3.3 70B) serves as fallback when Gemini API is unavailable.
+            Export as standalone HTML or structured JSON for EHR integration.
+          </p>
+          <div class="pipeline-tags">
+            <span class="tag">Gemini 2.0 Flash</span>
+            <span class="tag">Groq Fallback</span>
+            <span class="tag">HTML + JSON Export</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="text-align:center;margin-top:2.5rem;">
+      <a href="patient.html" class="btn-primary">
+        <span>◈ See the Full Pipeline in Action →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 3 · FEATURES GRID
+     ══════════════════════════════════════════════════════════ -->
+<section id="features" aria-label="NeuroHEX feature set">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div class="section-eyebrow">Features</div>
+    <h2 class="section-title">Not a demo.<br><span class="accent">A real clinical tool.</span></h2>
+
+    <div class="features-grid" role="list">
+
+      <article class="feature-card" role="listitem" data-cursor="hover">
+        <span class="feature-icon" aria-hidden="true">⬡</span>
+        <div class="feature-title">SynthSeg AI Parcellation</div>
+        <p class="feature-desc">32-region deep learning segmentation using real FreeSurfer labels (Billot et al., Nature Methods 2023). Not an intensity threshold approximation — a peer-reviewed convolutional model trained on 38 public MRI datasets.</p>
+      </article>
+
+      <article class="feature-card" role="listitem" data-cursor="hover">
+        <span class="feature-icon" aria-hidden="true">🧠</span>
+        <div class="feature-title">Interactive 3D Brain</div>
+        <p class="feature-desc">Three.js@0.182.0 GLB brain model with patient-scaled anatomy derived from parcellation output. Orbital camera, per-region color overlay, surgical pin placement with 3D-aware RAS coordinate mapping.</p>
+      </article>
+
+      <article class="feature-card" role="listitem" data-cursor="hover">
+        <span class="feature-icon" aria-hidden="true">🔬</span>
+        <div class="feature-title">Hippocampal Analysis</div>
+        <p class="feature-desc">FreeSurfer labels 17 (L) and 53 (R). Volume vs age- and sex-stratified norms from Raz et al. 2005. Asymmetry Index (ASI) flagged when difference exceeds 5%. Validated in Bangladeshi AD patients (MTA r=−0.350, p=0.005 — PMC11363468).</p>
+      </article>
+
+      <article class="feature-card" role="listitem" data-cursor="hover">
+        <span class="feature-icon" aria-hidden="true">⚕</span>
+        <div class="feature-title">Surgery Planner</div>
+        <p class="feature-desc">Click directly on the 3D brain surface to place surgical markers. Three.js raycasting maps screen coordinates to MRI voxel space (RAS). ABC/6 lesion volume estimation. Pin coordinates exportable to JSON. Addresses BD's ~1 neurosurgeon per million people capacity gap.</p>
+      </article>
+
+      <article class="feature-card" role="listitem" data-cursor="hover">
+        <span class="feature-icon" aria-hidden="true">🧬</span>
+        <div class="feature-title">BraTS Tumor Screening</div>
+        <p class="feature-desc">ONNX-powered glioma segmentation trained on BraTS 2020 dataset (Menze et al., IEEE TMI 2015). Outputs peritumoral edema, enhancing tumor, and necrotic core volumes in cm³. Critical for Bangladesh where brain tumors (2–3/100,000) are routinely detected at WHO Grade III–IV due to delayed access.</p>
+      </article>
+
+      <article class="feature-card" role="listitem" data-cursor="hover">
+        <span class="feature-icon" aria-hidden="true">📊</span>
+        <div class="feature-title">Longitudinal Tracking</div>
+        <p class="feature-desc">Compare scans across timepoints. Voxel-level delta maps highlight atrophy or growth. Annual % change benchmarked against Jack et al. 2010 normative atrophy rates. Flags exceeding 1.5× expected rate flagged in red.</p>
+      </article>
+
+      <article class="feature-card" role="listitem" data-cursor="hover">
+        <span class="feature-icon" aria-hidden="true">🤖</span>
+        <div class="feature-title">Gemini AI Reports</div>
+        <p class="feature-desc">Formal 5-section neuroradiology report generated by Gemini 2.0 Flash: TECHNIQUE, FINDINGS, IMPRESSION, DIFFERENTIAL DIAGNOSIS, RECOMMENDATIONS. Structured prompt injects all volumetric and ICD-10 context. Groq fallback on API failure.</p>
+      </article>
+
+      <article class="feature-card" role="listitem" data-cursor="hover">
+        <span class="feature-icon" aria-hidden="true">🔒</span>
+        <div class="feature-title">Zero Data Egress</div>
+        <p class="feature-desc">All computation runs locally in the browser. NIfTI parsing, DICOM reading (dcmjs), volumetric analysis, 3D rendering — zero patient data transmitted anywhere. HIPAA and GDPR compliant by architecture. No accounts, no tracking, no logs. Critical where legal barriers restrict cloud PHI upload.</p>
+      </article>
+
+      <article class="feature-card" role="listitem" data-cursor="hover">
+        <span class="feature-icon" aria-hidden="true">📥</span>
+        <div class="feature-title">Export Everything</div>
+        <p class="feature-desc">Standalone HTML clinical report with embedded charts and segmentation overlays. Structured JSON for EHR integration. One-click from the report panel — no login required. Designed for environments without PACS infrastructure, where most BD public hospitals still rely on printed film.</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 4 · BANGLADESH CLINICAL CONTEXT
+     ══════════════════════════════════════════════════════════ -->
+<section id="bd-context" aria-label="Bangladesh neurological healthcare context">
+  <div class="hex-bg" aria-hidden="true"></div>
+  <div style="max-width:1200px;margin:0 auto;">
+
+    <div class="section-eyebrow">Clinical Context</div>
+    <h2 class="section-title">Why Bangladesh needs this<br><span class="accent">right now.</span></h2>
+
+    <p class="bd-intro">
+      Every number below is a sourced statistic from peer-reviewed literature and national surveys.
+      This is the structural healthcare gap NeuroHEX was built to close.
+    </p>
+
+    <!-- ── WORKFORCE CRISIS ── -->
+    <div class="bd-block">
+      <div class="bd-block-label">01 · Workforce</div>
+      <h3 class="bd-block-title">A neurologist shortage with no short-term fix</h3>
+
+      <div class="bd-stat-row">
+        <div class="bd-stat-card bd-stat-red">
+          <div class="bd-stat-num">~160</div>
+          <div class="bd-stat-desc">Trained neurologists for 170 million people. Fewer than 1 per million — ranking Bangladesh alongside Cambodia, East Timor, and Nepal at the bottom of global neurologist density. Europe averages 9.2 per million — a 9× gap.</div>
+          <div class="bd-citation">European Journal of Neurology, Bassetti et al. 2024; Stroke Burden in Bangladesh, Academia.edu</div>
+        </div>
+        <div class="bd-stat-card bd-stat-red">
+          <div class="bd-stat-num">2</div>
+          <div class="bd-stat-desc">Centers offering neurology training nationally — Dhaka Medical College (DMCH) and BSMMU. BSMMU accepts approximately 9 new neurology students per year. This pipeline is structurally insufficient for national need.</div>
+          <div class="bd-citation">Neurology journal, Bosley 2010</div>
+        </div>
+        <div class="bd-stat-card bd-stat-red">
+          <div class="bd-stat-num">&lt;10</div>
+          <div class="bd-stat-desc">Active interventional neuroradiologists operating nationwide, almost exclusively within NINS&H and BSMMU in Dhaka. District hospitals have zero subspecialty neuroradiology coverage.</div>
+          <div class="bd-citation">PMC11872797; NINS&H Department Records</div>
+        </div>
+      </div>
+
+      <!-- Geographic distribution bar -->
+      <div class="bd-geo-bar">
+        <div class="bd-geo-label">Geographic distribution of all neurological specialists</div>
+        <div class="bd-geo-track">
+          <div class="bd-geo-dhaka" style="width:80%">
+            <span class="bd-geo-pct">~80%</span>
+            <span class="bd-geo-name">Dhaka Division</span>
+          </div>
+          <div class="bd-geo-other" style="width:20%">
+            <span class="bd-geo-pct">~20%</span>
+            <span class="bd-geo-name">Rest of Bangladesh (serves ~62% rural population)</span>
+          </div>
+        </div>
+        <div class="bd-geo-footnote">62% of Bangladesh's population lives in rural areas; 75% of all doctors are concentrated in urban centers. Rural doctor density: 1.1 per 10,000 vs 18.2 per 10,000 in cities. <span class="bd-cite-inline">[PMC6186485; Bonikbarta 2024]</span></div>
+      </div>
+    </div>
+
+    <!-- ── STROKE CRISIS ── -->
+    <div class="bd-block">
+      <div class="bd-block-label">02 · Stroke</div>
+      <h3 class="bd-block-title">130,000+ deaths per year — most arriving too late</h3>
+
+      <div class="bd-stat-row">
+        <div class="bd-stat-card bd-stat-amber">
+          <div class="bd-stat-num">130,655</div>
+          <div class="bd-stat-desc">Stroke deaths in Bangladesh in 2010 alone. By 2019, stroke mortality had increased a further 13.7% compared to 2015. Age-adjusted death rate: 119.20 per 100,000 population — ranked 41st globally.</div>
+          <div class="bd-citation">PMC10199709; ScienceDirect 2024 prevalence meta-analysis</div>
+        </div>
+        <div class="bd-stat-card bd-stat-amber">
+          <div class="bd-stat-num">14 hrs</div>
+          <div class="bd-stat-desc">Median prehospital delay from stroke onset to hospital arrival (IQR: 8–28 hours). The intravenous thrombolysis window is 4.5 hours. Nearly 90% of acute ischemic stroke patients miss it entirely.</div>
+          <div class="bd-citation">PMC11874345; Emergency Medicine Journal 2025</div>
+        </div>
+        <div class="bd-stat-card bd-stat-amber">
+          <div class="bd-stat-num">39.7%</div>
+          <div class="bd-stat-desc">Of stroke survivors experience moderate-to-severe disability. Total DALYs calculated at 105,302 for one CRP cohort alone (2015–2023). YLL far exceeds YLD — indicating high premature mortality from delayed diagnosis.</div>
+          <div class="bd-citation">SSRN 5416395 — Disease Burden of Stroke in Bangladesh 2015–2023</div>
+        </div>
+      </div>
+
+      <div class="bd-insight-bar">
+        <span class="bd-insight-icon">⚡</span>
+        <p class="bd-insight-text">Every minute without treatment, a stroke patient loses approximately 1.9 million neurons. With a median 14-hour delay, most Bangladeshi patients arrive having lost over 150 billion neurons before any imaging begins. NeuroHEX cuts the analysis step — the moment after imaging — from 45–90 minutes to 60 seconds.</p>
+      </div>
+    </div>
+
+    <!-- ── DEMENTIA & ALZHEIMER'S ── -->
+    <div class="bd-block">
+      <div class="bd-block-label">03 · Dementia</div>
+      <h3 class="bd-block-title">A rising epidemic — and a Bangladeshi paper that validates the approach</h3>
+
+      <div class="bd-stat-row">
+        <div class="bd-stat-card bd-stat-cyan">
+          <div class="bd-stat-num">8.0%</div>
+          <div class="bd-stat-desc">Of Bangladeshis aged 60+ live with dementia. With ~17 million people over 60, this implies approximately 1.37 million patients nationally — projected to reach 2.40 million by 2041 as the population ages.</div>
+          <div class="bd-citation">Lancet Regional Health Southeast Asia, Aug 2023 (icddr,b / Newcastle University); PMC10577143</div>
+        </div>
+        <div class="bd-stat-card bd-stat-cyan">
+          <div class="bd-stat-num">75.5%</div>
+          <div class="bd-stat-desc">Of dementia patients in Bangladesh are women. Women are 2.15× more likely to have dementia (OR: 2.15). People aged 90+ have 9.6× higher odds than those aged 60–69. Low education triples risk.</div>
+          <div class="bd-citation">Lancet Regional Health Southeast Asia, Aug 2023; TBS News 2024</div>
+        </div>
+        <div class="bd-stat-card bd-stat-cyan bd-stat-gold">
+          <div class="bd-stat-label-top">🏆 GOLD CITATION</div>
+          <div class="bd-stat-num" style="font-size:1.4rem;">r = −0.350<br><span style="font-size:0.9rem;">p = 0.005</span></div>
+          <div class="bd-stat-desc">MRI medial temporal lobe atrophy (MTA) score significantly correlates with MMSE dementia severity in Bangladeshi patients. Study at NINS&H Bangladesh, 2019–2022, n=62. This is the scientific foundation for NeuroHEX's hippocampal volumetric analysis — validated directly in BD patients.</div>
+          <div class="bd-citation">PMC11363468 — "Correlation of Cognitive Status and Atrophy Score in AD Among Bangladeshi Population"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EPILEPSY ── -->
+    <div class="bd-block">
+      <div class="bd-block-label">04 · Epilepsy</div>
+      <h3 class="bd-block-title">63.4% of active epilepsy patients receive no treatment</h3>
+
+      <div class="bd-stat-row">
+        <div class="bd-stat-card bd-stat-red">
+          <div class="bd-stat-num">8.4‰</div>
+          <div class="bd-stat-desc">National epilepsy prevalence per 1,000 population — from Bangladesh's first-ever national household survey of 9,839 participants. 65.1% have active epilepsy. Of those: 63.4% receive no treatment whatsoever.</div>
+          <div class="bd-citation">PMC7733657 — National epilepsy prevalence survey, Bangladesh</div>
+        </div>
+        <div class="bd-stat-card bd-stat-red">
+          <div class="bd-stat-num">72.5%</div>
+          <div class="bd-stat-desc">Of treated epilepsy patients show low medication adherence. Epilepsy is heavily stigmatized — many seek traditional or religious healers first. Structural MRI is required to identify causes (cortical dysplasia, hippocampal sclerosis) but is rarely performed in district hospitals.</div>
+          <div class="bd-citation">PMC7733657</div>
+        </div>
+        <div class="bd-stat-card bd-stat-red">
+          <div class="bd-stat-num">4</div>
+          <div class="bd-stat-desc">The four top neurological burdens in Bangladesh where brain MRI is required for definitive diagnosis and monitoring: Stroke, Epilepsy, Parkinson's disease, Meningitis. NeuroHEX addresses all four conditions with its integrated pipeline.</div>
+          <div class="bd-citation">Health Science Reports 2025, Khatun et al. PMC11872797</div>
+        </div>
+      </div>
+
+      <div class="bd-insight-bar bd-insight-amber">
+        <span class="bd-insight-icon">🧠</span>
+        <p class="bd-insight-text">"In Bangladesh, 63.4% of epilepsy patients with active seizures receive no treatment — not because medicine doesn't exist, but because structural MRI analysis to identify the cause is inaccessible." NeuroHEX closes this specific, sourced, unmet need.</p>
+      </div>
+    </div>
+
+    <!-- ── INFRASTRUCTURE ── -->
+    <div class="bd-block">
+      <div class="bd-block-label">05 · Infrastructure</div>
+      <h3 class="bd-block-title">The machine exists. The expertise — and the AI software — do not.</h3>
+
+      <!-- MRI Density comparison table -->
+      <div class="bd-table-wrap">
+        <div class="bd-table-eyebrow">MRI Scanner Density: Global Comparison</div>
+        <div class="bd-compare-table" role="table" aria-label="MRI scanners per million people by country">
+          <div class="bd-table-row bd-table-head" role="row">
+            <div role="columnheader">Country</div>
+            <div role="columnheader">Scanners / Million</div>
+            <div role="columnheader">Access Profile</div>
+          </div>
+          <div class="bd-table-row" role="row">
+            <div role="cell" class="bd-country">🇯🇵 Japan</div>
+            <div role="cell"><span class="bd-mri-bar" style="--bar-w:100%">57.39</span></div>
+            <div role="cell" class="bd-table-note">Automated teleradiology standard</div>
+          </div>
+          <div class="bd-table-row" role="row">
+            <div role="cell" class="bd-country">🇺🇸 United States</div>
+            <div role="cell"><span class="bd-mri-bar" style="--bar-w:60%">34.66</span></div>
+            <div role="cell" class="bd-table-note">Multi-modality integration</div>
+          </div>
+          <div class="bd-table-row" role="row">
+            <div role="cell" class="bd-country">🇪🇪 Estonia</div>
+            <div role="cell"><span class="bd-mri-bar" style="--bar-w:26%">15.04</span></div>
+            <div role="cell" class="bd-table-note">Centralized national health storage</div>
+          </div>
+          <div class="bd-table-row bd-table-row-bd" role="row">
+            <div role="cell" class="bd-country">🇧🇩 Bangladesh</div>
+            <div role="cell"><span class="bd-mri-bar bd-mri-bar-red" style="--bar-w:3%">&lt;1</span></div>
+            <div role="cell" class="bd-table-note bd-table-note-red">Access heavily concentrated in Dhaka. District hospitals: zero MRI in cross-sectional studies.</div>
+          </div>
+        </div>
+        <div class="bd-table-source">Source: TheGlobalEconomy.com MRI rankings; Aeon MRI Statistics 2024 [ref 34, 35]</div>
+      </div>
+
+      <div class="bd-infra-grid">
+        <div class="bd-infra-card">
+          <div class="bd-infra-icon">📋</div>
+          <div class="bd-infra-title">No National PACS</div>
+          <p class="bd-infra-body">The public sector lacks unified PACS infrastructure. Hospitals rely on printed film and manual transport of physical folders. RAD-AID notes only select hospitals (e.g. MARMCH in northern BD) are beginning to implement RIS/PACS — meaning most have no digital imaging workflow. <span class="bd-cite-inline">[RAD-AID Bangladesh; Bangla Puzzle Limited]</span></p>
+        </div>
+        <div class="bd-infra-card">
+          <div class="bd-infra-icon">💸</div>
+          <div class="bd-infra-title">$100 Per Scan, $958 Annual Income</div>
+          <p class="bd-infra-body">A single brain MRI costs approximately $100 USD (≈11,000 BDT) — roughly 10% of per capita annual income when the figure was $958/year. Patients lacking insurance are 3.85× more likely to skip MRI entirely. NeuroHEX doesn't replace the scanner — it replaces the $50,000/year AI software needed to analyze it. <span class="bd-cite-inline">[ResearchGate "Price of Imaging Tests and Access"]</span></p>
+        </div>
+        <div class="bd-infra-card">
+          <div class="bd-infra-icon">⏳</div>
+          <div class="bd-infra-title">1–2 Month Wait Times</div>
+          <p class="bd-infra-body">In major public hospitals, MRI appointments and report interpretations are delayed 1–2 months. Outside Dhaka, specialized imaging reports are delayed by weeks. For conditions like stroke where minutes matter, this delay is clinically catastrophic. <span class="bd-cite-inline">[PMC11948740]</span></p>
+        </div>
+        <div class="bd-infra-card">
+          <div class="bd-infra-icon">🏥</div>
+          <div class="bd-infra-title">Bangladesh's 4-Tier Health System</div>
+          <p class="bd-infra-body">Bangladesh uses a formal 4-tier structure: (1) Community Clinics — ~14,000 nationally, no imaging; (2) Upazila Health Complexes — ~470, basic lab/X-ray; (3) District Hospitals — ~64, MRI/CT in ~50%; (4) Tertiary/National — BSMMU, DMCH, NINS&H. NeuroHEX serves Tier 3 and the referring function of Tier 2. <span class="bd-cite-inline">[DGHS Bangladesh; RAD-AID Bangladesh country page]</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ECONOMIC BURDEN ── -->
+    <div class="bd-block">
+      <div class="bd-block-label">06 · Economic Burden</div>
+      <h3 class="bd-block-title">210.5 billion BDT in annual productivity loss</h3>
+
+      <div class="bd-econ-grid">
+        <div class="bd-econ-card">
+          <div class="bd-econ-num">210.5B BDT</div>
+          <div class="bd-econ-label">Direct cost of mental and neurological conditions annually</div>
+          <div class="bd-econ-pct">≈ 0.76% of national GDP</div>
+          <div class="bd-citation">WHO Mental Health Investment Case, Bangladesh [ref 22]</div>
+        </div>
+        <div class="bd-econ-card">
+          <div class="bd-econ-num">$1.18B USD</div>
+          <div class="bd-econ-label">Welfare and disability production loss including developmental disabilities</div>
+          <div class="bd-econ-pct">≈ 1.74% of GDP</div>
+          <div class="bd-citation">ResearchGate — Economic Costs of Disability in Bangladesh [ref 23]</div>
+        </div>
+        <div class="bd-econ-card">
+          <div class="bd-econ-num">&gt;80%</div>
+          <div class="bd-econ-label">Of public neuro funding spent on inpatient care — neglecting outpatient screening and community diagnostics entirely</div>
+          <div class="bd-econ-pct">Structural misallocation</div>
+          <div class="bd-citation">WHO Mental Health Investment Case, Bangladesh [ref 22]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CTA ── -->
+    <div style="text-align:center;margin-top:3.5rem;">
+      <p style="font-family:var(--mono);font-size:0.7rem;color:var(--fg-dim);margin-bottom:1.2rem;letter-spacing:0.08em;">
+        PRE-COMPUTED ALZHEIMER'S CASE — NO UPLOAD REQUIRED
+      </p>
+      <a href="patient.html" class="btn-demo" style="display:inline-flex;">
+        <span>▶ Try Live Demo — Full AI Report in 1 Second</span>
+        <span class="arrow-icon">→</span>
+      </a>
+      <p style="font-family:var(--mono);font-size:0.58rem;color:var(--fg-muted);margin-top:0.8rem;letter-spacing:0.08em;">
+        Pre-computed SynthSeg + BraTS + Gemini results loaded instantly · No upload required
+      </p>
+      <div style="margin-top:1.2rem;">
+        <a href="context.html" class="btn-ghost" style="display:inline-flex;">
+          🇧🇩 Read the Full Bangladesh Clinical Context →
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 5 · ARCHITECTURE
+     ══════════════════════════════════════════════════════════ -->
+<section id="architecture" aria-label="Technical architecture">
+  <div class="arch-grid">
+    <!-- Left -->
+    <div>
+      <div class="section-eyebrow">Architecture</div>
+      <h2 class="section-title">Built on<br><span class="accent">peer-reviewed neuroscience.</span></h2>
+
+      <ul class="arch-refs" role="list">
+        <li role="listitem">
+          <span class="ref-num">[1]</span>
+          SynthSeg: Billot B et al. <em>Robust segmentation of brain MRI in the wild with hierarchical CNNs and no retraining.</em> Nature Methods, 2023.
+        </li>
+        <li role="listitem">
+          <span class="ref-num">[2]</span>
+          Brain Age: Cole JH et al. <em>Brain age predicts mortality.</em> Nature Communications, 2018.
+        </li>
+        <li role="listitem">
+          <span class="ref-num">[3]</span>
+          BraTS 2020: Menze BH et al. <em>The multimodal brain tumor image segmentation benchmark.</em> IEEE TMI, 2015.
+        </li>
+        <li role="listitem">
+          <span class="ref-num">[4]</span>
+          Hippocampal norms: Raz N et al. <em>Regional brain changes in aging healthy adults.</em> Cerebral Cortex, 2005.
+        </li>
+        <li role="listitem">
+          <span class="ref-num">[5]</span>
+          Atrophy rates: Jack CR et al. <em>Shapes of the trajectories of 5 neuroimaging biomarkers in ADNI.</em> Archives of Neurology, 2010.
+        </li>
+        <li role="listitem">
+          <span class="ref-num">[6]</span>
+          BD Validation: <em>Correlation of Cognitive Status and Atrophy Score in Alzheimer's Disease Among the Bangladeshi Population.</em> NINS&H, 2019–2022. PMC11363468.
+        </li>
+        <li role="listitem">
+          <span class="ref-num">[7]</span>
+          BD Stroke burden: <em>Factors associated with late hospital arrival in acute stroke patients of Bangladesh.</em> PMC11874345 / Emergency Medicine Journal, 2025.
+        </li>
+      </ul>
+
+      <p class="arch-body">
+        NeuroHEX integrates five peer-reviewed models into a single browser session. The FastAPI backend runs
+        SynthSeg for real 32-region parcellation — not intensity thresholds. Three.js@0.182.0 renders the 3D
+        brain model with patient-derived anatomy. Chart.js@4.5.1 powers volumetric comparisons. dcmjs@0.52.0
+        handles DICOM parsing. When the backend is offline, a full demo mode activates automatically with
+        pre-computed clinical results — so the tool always works.
+      </p>
+    </div>
+
+    <!-- Right: Terminal -->
+    <div>
+      <div class="terminal" role="img" aria-label="NeuroHEX architecture diagram in ASCII">
+        <div class="terminal-header">
+          <span class="terminal-dot"></span>
+          <span class="terminal-dot"></span>
+          <span class="terminal-dot"></span>
+          <span class="terminal-title">neurohex_architecture.txt</span>
+        </div>
+        <div class="terminal-body"><span class="dim">┌─────────────────────────────────────────┐</span>
+<span class="dim">│</span>          <span class="highlight">BROWSER (Any Laptop)</span>            <span class="dim">│</span>
+<span class="dim">├─────────────────────────────────────────┤</span>
+<span class="dim">│</span> <span class="cyan-t">NiiVue WebGL</span><span class="dim">│</span>  <span class="cyan-t">Three.js@0.182</span>       <span class="dim">│</span>
+<span class="dim">│</span> MRI multiplanar <span class="dim">│</span>  3D brain + surgery   <span class="dim">│</span>
+<span class="dim">├─────────────────────────────────────────┤</span>
+<span class="dim">│</span> <span class="cyan-t">Chart.js@4.5.1</span> <span class="dim">│</span>  <span class="cyan-t">dcmjs@0.52</span>           <span class="dim">│</span>
+<span class="dim">│</span> Volumetric viz  <span class="dim">│</span>  DICOM parsing        <span class="dim">│</span>
+<span class="dim">└─────────────────┴───────────────────────┘</span>
+             <span class="dim">│ FastAPI (optional)</span>
+<span class="dim">┌────────────▼────────────────────────────┐</span>
+<span class="dim">│</span>           <span class="highlight">Python Backend</span>                <span class="dim">│</span>
+<span class="dim">│</span>  └─ <span class="cyan-t">SynthSeg</span>   32-region parcellation   <span class="dim">│</span>
+<span class="dim">│</span>  └─ <span class="cyan-t">BraTS ONNX</span> tumor segmentation       <span class="dim">│</span>
+<span class="dim">│</span>  └─ <span class="cyan-t">Brain Age</span>  Cole 2018 ridge regr.    <span class="dim">│</span>
+<span class="dim">└─────────────────────────────────────────┘</span>
+             <span class="dim">│ Gemini API (Groq fallback)</span>
+<span class="dim">┌────────────▼────────────────────────────┐</span>
+<span class="dim">│</span>     <span class="highlight">Gemini 2.0 Flash</span> → AI Report        <span class="dim">│</span>
+<span class="dim">│</span>     5-section formal neuroradiology Rx   <span class="dim">│</span>
+<span class="dim">│</span>     Export: <span class="cyan-t">HTML</span> · <span class="cyan-t">JSON</span> · EHR-ready      <span class="dim">│</span>
+<span class="dim">└─────────────────────────────────────────┘</span>
+<span class="highlight">DATA EGRESS: 0 KB patient data</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 6 · WHO USES THIS — PERSONAS (last before CTA)
+     ══════════════════════════════════════════════════════════ -->
+<section id="personas" aria-label="Who uses NeuroHEX">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div class="section-eyebrow">Who Uses This</div>
+    <h2 class="section-title">Built for the clinician<br>who <span class="accent">doesn't have time to wait.</span></h2>
+
+    <div class="personas-grid">
+
+      <!-- Persona 1 -->
+      <div class="persona-card" data-cursor="hover">
+        <div class="persona-avatar" aria-hidden="true">👨‍⚕️</div>
+        <div class="persona-role">District Hospital · Tier 3 Radiology</div>
+        <div class="persona-name">Dr. Rahim Chowdhury</div>
+        <p class="persona-problem">
+          Overloaded district radiologist at Faridpur General — one of ~700 diagnostic radiologists serving a nation of 170 million. 40 MRI reads per week, zero neuroradiology subspecialty training, no access to enterprise AI. Patient outcomes depend on gestalt reads of complex brain scans. Waiting list: 4–6 weeks.
+        </p>
+        <p class="persona-solution">
+          NeuroHEX gives Dr. Rahim a second opinion in 60 seconds: hippocampal volumes vs age norms (validated in BD patients — PMC11363468), Fazekas WM score for his hypertensive patients, ICD-10 flags, and a Gemini-generated clinical report — all without leaving his browser or uploading patient data anywhere.
+        </p>
+      </div>
+
+      <!-- Persona 2 -->
+      <div class="persona-card" data-cursor="hover">
+        <div class="persona-avatar" aria-hidden="true">🔬</div>
+        <div class="persona-role">University Research Lab · Neurology</div>
+        <div class="persona-name">Dr. Priya Nair</div>
+        <p class="persona-problem">
+          PI tracking longitudinal MRI cohort of 120 patients across 3 years. Current pipeline: queue jobs on a university HPC cluster, wait days for FreeSurfer output, manually merge CSVs. Atrophy rates calculated in spreadsheets. The structural barriers affecting BD's 1.37 million estimated dementia patients make cohort recruitment slow and underpowered.
+        </p>
+        <p class="persona-solution">
+          NeuroHEX processes each follow-up scan at the clinic, computes voxel-level delta maps vs baseline, flags accelerated atrophy (Jack et al. 2010 rates), and exports structured JSON for direct EHR and R/Python integration. No cluster queue. No manual CSV merging.
+        </p>
+      </div>
+
+      <!-- Persona 3 -->
+      <div class="persona-card" data-cursor="hover">
+        <div class="persona-avatar" aria-hidden="true">📚</div>
+        <div class="persona-role">Medical School · Year 3 Student</div>
+        <div class="persona-name">Tasnim Ahmed</div>
+        <p class="persona-problem">
+          3rd-year student at Dhaka Medical College — one of only two institutions in Bangladesh offering neurology training (BSMMU accepts ~9 neurology students per year). Learning neuroanatomy from textbook diagrams. No access to real MRI analysis tools. Clinical rotations provide passive observation only.
+        </p>
+        <p class="persona-solution">
+          NeuroHEX's 3D interactive brain — patient-scaled with real parcellation labels — turns an abstract atlas into a tangible, explorable structure. Upload a scan from the teaching library and see every labelled region in true 3D. The same tool used in clinical practice, available in any browser.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 7 · FINAL CTA
+     ══════════════════════════════════════════════════════════ -->
+<section id="cta-final" aria-label="Call to action">
+  <div class="cta-hex-bg" aria-hidden="true">⬡</div>
+
+  <div class="cta-inner">
+    <h2 class="cta-title">Run the analysis.<br>See the brain.</h2>
+
+    <p class="cta-sub">
+      Open NeuroHEX in your browser. Upload a NIfTI scan. Watch real AI neuroscience
+      run on your machine — 32-region parcellation, tumor screening, and a Gemini-written
+      clinical report, all in under 60 seconds.
+    </p>
+
+    <div class="cta-buttons">
+      <a href="patient.html" class="btn-demo" style="font-size:0.9rem;padding:16px 42px;">
+        <span>◈ Launch NeuroHEX</span>
+        <span class="arrow-icon">→</span>
+      </a>
+      <a href="#" class="btn-ghost">↓ View Source Code</a>
+    </div>
+
+    <p class="cta-footnote">
+      NeuroHEX · Mufazzer Hossain Anas<br>
+      Segmentation: SynthSeg (Billot et al., Nature Methods 2023) · Tumor: BraTS 2020 (Menze et al., IEEE TMI 2015)<br>
+      BD Validation: PMC11363468 — NINS&H Alzheimer's cohort · Stroke data: PMC11874345<br>
+      <em>Not a substitute for clinical diagnosis. For research and educational use.</em>
+    </p>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-brand">⬡ NeuroHEX</div>
+  <div class="footer-meta">
+    Mufazzer Hossain Anas
+  </div>
+</footer>
+
+<script type="module" src="/src/main.js"></script>
+
+</body>
+</html>

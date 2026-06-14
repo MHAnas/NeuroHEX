@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroHEX — 3D Research Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <!-- ── TOP NAV ── -->
+    <nav id="top-nav">
+      <div class="nav-brand">⬡ NeuroHEX</div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link"><span class="nav-icon">⊞</span> Overview</a>
+        <a href="patient.html" class="nav-link nav-link-active nav-link-patient">
+          <span class="nav-icon">◉</span> Analyze patient
+        </a>
+        <a href="comparison.html" class="nav-link "><span class="nav-icon">⇌</span> Compare</a>
+        <a href="atlas.html" class="nav-link nav-link-active"><span class="nav-icon">◈</span> 3D Atlas</a>
+      </div>
+    </nav>
+
+    <canvas class="canvas"></canvas>
+
+    <!-- ── LOADING SCREEN ── -->
+    <div id="loading-screen">
+      <div class="loader-inner">
+        <div class="loader-logo">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="22" stroke="#00e5ff" stroke-width="1" stroke-dasharray="4 3" opacity="0.4"/>
+            <circle cx="24" cy="24" r="14" stroke="#00e5ff" stroke-width="1.5" opacity="0.7"/>
+            <circle cx="24" cy="24" r="4" fill="#00e5ff"/>
+            <line x1="24" y1="2" x2="24" y2="10" stroke="#00e5ff" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="24" y1="38" x2="24" y2="46" stroke="#00e5ff" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="2" y1="24" x2="10" y2="24" stroke="#00e5ff" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="38" y1="24" x2="46" y2="24" stroke="#00e5ff" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="loader-title">NeuroHEX</div>
+        <div class="loader-sub">3D Anatomical Research Console</div>
+        <div class="loader-bar-track">
+          <div class="loader-bar" id="loader-bar"></div>
+        </div>
+        <div class="loader-pct" id="loader-pct">0%</div>
+        <div class="loader-msg" id="loader-msg">Initializing renderer…</div>
+      </div>
+    </div>
+
+    <!-- ── KEYBOARD SHORTCUT HINT ── -->
+    <div id="shortcut-toast" class="shortcut-toast hidden">
+      <span id="shortcut-key"></span><span id="shortcut-desc"></span>
+    </div>
+
+    <!-- ── REGION DETAIL PANEL (slide-in) ── -->
+    <div id="region-panel" class="region-panel">
+      <button class="panel-close" id="panel-close">✕</button>
+      <div class="panel-badge" id="panel-badge">REGION</div>
+      <h2 class="panel-name" id="panel-name">—</h2>
+      <div class="panel-divider"></div>
+      <div class="panel-section">
+        <div class="panel-label">PRIMARY FUNCTION</div>
+        <div class="panel-value" id="panel-func">—</div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">ASSOCIATED DISORDERS</div>
+        <div class="panel-value" id="panel-disorders">—</div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">NETWORK</div>
+        <div class="panel-value" id="panel-network">—</div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">CITATION</div>
+        <div class="panel-value" id="panel-source" style="font-size:9px;line-height:1.8;color:var(--fg-dim)">—</div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">ACTIVATION PROFILE</div>
+        <div class="panel-bars" id="panel-bars"></div>
+      </div>
+      <button class="panel-isolate-btn" id="panel-isolate-btn">Isolate Region</button>
+      <button class="panel-reset-btn" id="panel-reset-btn">Show All</button>
+    </div>
+    <!-- ── DISEASE MODE OVERLAY ── -->
+    <div id="disease-panel" class="disease-panel">
+      <button class="disease-panel-close" id="disease-panel-close">✕</button>
+      <div class="disease-panel-header">
+        <span class="disease-badge" id="disease-badge">DISEASE</span>
+        <h2 class="disease-panel-name" id="disease-panel-name">—</h2>
+        <div class="disease-panel-sub" id="disease-panel-sub">—</div>
+      </div>
+      <div class="disease-panel-divider"></div>
+      <div class="disease-panel-body">
+        <div class="dp-section">
+          <div class="dp-label">BANGLADESH CONTEXT</div>
+          <div class="dp-value" id="dp-context">—</div>
+        </div>
+        <div class="dp-section">
+          <div class="dp-label">KEY RISK FACTORS (BD)</div>
+          <div class="dp-value" id="dp-risk">—</div>
+        </div>
+        <div class="dp-section">
+          <div class="dp-label">AFFECTED BRAIN REGIONS</div>
+          <div class="dp-tags" id="dp-regions"></div>
+        </div>
+        <div class="dp-section">
+          <div class="dp-label">HEALTHCARE GAPS</div>
+          <div class="dp-value" id="dp-gaps">—</div>
+        </div>
+        <div class="dp-refs">
+          <div class="dp-label">CITATIONS</div>
+          <div class="dp-refs-body" id="dp-refs">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DISEASE BUTTONS (bottom-left pill bar) ── -->
+    <div id="disease-bar">
+      <span class="disease-bar-label">DISEASE MODE</span>
+      <div class="disease-btn-row">
+        <button class="disease-btn" data-disease="stroke">🔴 Stroke</button>
+        <button class="disease-btn" data-disease="alzheimer">🟣 Alzheimer's</button>
+        <button class="disease-btn" data-disease="epilepsy">🟡 Epilepsy</button>
+        <button class="disease-btn" data-disease="parkinson">🟠 Parkinson's</button>
+        <button class="disease-btn" data-disease="meningitis">🔵 Meningitis</button>
+      </div>
+      <button id="disease-clear-btn" class="disease-clear-btn hidden">✕ Clear Disease Mode</button>
+    </div>
+
+    <!-- ── SPLIT-VIEW DIVIDER ── -->
+    <div id="split-divider" class="split-divider hidden">
+      <div class="split-handle"></div>
+      <div class="split-label left" id="split-label-left">MODE A</div>
+      <div class="split-label right" id="split-label-right">MODE B</div>
+    </div>
+
+    <!-- ── TOOLBAR (icon bar, bottom-center) ── -->
+    <div id="toolbar">
+      <button class="tb-btn" data-tip="Toggle GUI [H]"       id="tb-gui">⊞</button>
+      <button class="tb-btn" data-tip="Isolate [I]"          id="tb-isolate">◎</button>
+      <button class="tb-btn" data-tip="Split Compare [V]"    id="tb-split">⊟</button>
+      <button class="tb-btn" data-tip="Clip Sagittal [X]"    id="tb-clipx">X</button>
+      <button class="tb-btn" data-tip="Clip Coronal [Y]"     id="tb-clipy">Y</button>
+      <button class="tb-btn" data-tip="Clip Axial [Z]"       id="tb-clipz">Z</button>
+      <button class="tb-btn" data-tip="Reset Camera [R]"     id="tb-reset">↺</button>
+      <button class="tb-btn" data-tip="Screenshot [P]"       id="tb-screenshot">📷</button>
+      <button class="tb-btn active" data-tip="Pause Anim [Space]" id="tb-pause">⏸</button>
+    </div>
+    <!-- ── REGION SEARCH BAR ── -->
+<div id="region-search-bar">
+  <div id="region-search-wrap">
+    <span id="region-search-icon">⬡</span>
+    <input
+      id="region-search-input"
+      type="text"
+      placeholder="Search region…"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <button id="region-search-clear" title="Clear">✕</button>
+  </div>
+  <ul id="region-search-results"></ul>
+</div>
+
+    <script type="module" src="/src/atlas.js"></script>
+  </body>
+</html>

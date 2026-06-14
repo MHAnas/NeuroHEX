@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroHEX Poster — AI MRI Analysis Platform (Light Edition)</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
+<style>
+  /* ── PRINT CONFIG (clean white background) ── */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* light mode palette */
+    --ink:       #ffffff;
+    --ink2:      #f8fafc;
+    --panel:     #ffffff;
+    --panelb:    #f1f5f9;
+    --rule:      #e2e8f0;
+    --cyan:      #0e7c7c;
+    --cyan2:     #0f8b8b;
+    --amber:     #b45309;
+    --red:       #b91c1c;
+    --green:     #0d6b4a;
+    --fg:        #0f172a;
+    --fg2:       #334155;
+    --fg3:       #475569;
+    --mono:      'Space Mono', monospace;
+    --sans:      'Inter', sans-serif;
+    --display:   'Syne', sans-serif;
+    --hex:       #0e7c7c;
+  }
+
+  html, body {
+    width: 210mm;
+    min-height: 297mm;
+    background: white;
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 8.2pt;
+    line-height: 1.45;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ─── LAYOUT WRAPPER ─── */
+  .poster {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 7mm 7mm 6mm;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 0;
+    background: white;
+  }
+
+  /* ══════════════════════════════════════
+     HEADER (light)
+  ══════════════════════════════════════ */
+  .header {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-bottom: 2px solid var(--cyan);
+    padding: 5mm 6mm 4mm;
+    margin-bottom: 3mm;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(14,124,124,0.03) 3px,
+      rgba(14,124,124,0.03) 4px
+    );
+    pointer-events: none;
+  }
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 4mm;
+  }
+  .header-logo {
+    font-family: var(--display);
+    font-size: 26pt;
+    font-weight: 800;
+    color: var(--cyan);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 2mm;
+  }
+  .header-logo .hex-sym {
+    opacity: 0.7;
+    font-size: 20pt;
+  }
+  .header-subtitle {
+    font-family: var(--mono);
+    font-size: 6pt;
+    color: var(--fg3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 1.5mm;
+  }
+  .header-tagline {
+    font-family: var(--display);
+    font-size: 9pt;
+    font-weight: 700;
+    color: var(--fg);
+    margin-top: 2mm;
+    max-width: 110mm;
+    line-height: 1.3;
+  }
+  .header-tagline em {
+    color: var(--cyan);
+    font-style: normal;
+  }
+  .header-meta {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .header-meta .author {
+    font-family: var(--display);
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--fg);
+  }
+  .header-meta .affil {
+    font-size: 6.5pt;
+    color: var(--fg3);
+    font-family: var(--mono);
+    margin-top: 0.5mm;
+  }
+  .header-pills {
+    display: flex;
+    gap: 2mm;
+    margin-top: 2.5mm;
+    flex-wrap: wrap;
+  }
+  .pill {
+    font-family: var(--mono);
+    font-size: 5.5pt;
+    padding: 1mm 2.5mm;
+    border-radius: 1mm;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .pill-cyan  { background: rgba(14,124,124,0.12); color: var(--cyan); border: 1px solid rgba(14,124,124,0.3); }
+  .pill-amber { background: rgba(180,83,9,0.1); color: var(--amber); border: 1px solid rgba(180,83,9,0.2); }
+  .pill-green { background: rgba(13,107,74,0.1); color: var(--green); border: 1px solid rgba(13,107,74,0.2); }
+  .pill-red   { background: rgba(185,28,28,0.08);  color: var(--red);   border: 1px solid rgba(185,28,28,0.2); }
+
+  /* ══════════════════════════════════════
+     STAT STRIP (light)
+  ══════════════════════════════════════ */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2mm;
+    margin-bottom: 3mm;
+  }
+  .stat-chip {
+    background: var(--panelb);
+    border: 1px solid var(--rule);
+    padding: 2.5mm 2mm;
+    text-align: center;
+    position: relative;
+  }
+  .stat-chip::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--chip-color, var(--cyan));
+  }
+  .stat-chip .n { font-family: var(--display); font-size: 13pt; font-weight: 800; color: var(--chip-color, var(--cyan)); line-height: 1; }
+  .stat-chip .l { font-size: 5.5pt; color: var(--fg3); margin-top: 0.8mm; font-family: var(--mono); letter-spacing: 0.05em; }
+
+  /* ══════════════════════════════════════
+     BODY COLUMNS
+  ══════════════════════════════════════ */
+  .body-cols {
+    display: grid;
+    grid-template-columns: 63mm 63mm 63mm;
+    gap: 3mm;
+    align-items: start;
+  }
+
+  /* ── PANEL BASE (light) ── */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    padding: 3mm 3.5mm;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .panel + .panel { margin-top: 3mm; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 5pt;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 1.5mm;
+    display: flex;
+    align-items: center;
+    gap: 1.5mm;
+  }
+  .eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 3mm;
+    height: 1px;
+    background: var(--cyan);
+  }
+
+  .panel-title {
+    font-family: var(--display);
+    font-size: 9pt;
+    font-weight: 700;
+    color: var(--fg);
+    line-height: 1.2;
+    margin-bottom: 2mm;
+  }
+  .panel-title span { color: var(--cyan); }
+
+  .body-text {
+    font-size: 7pt;
+    color: var(--fg2);
+    line-height: 1.5;
+  }
+  .body-text strong { color: var(--fg); }
+  .body-text em { color: var(--cyan); font-style: normal; }
+
+  /* ─── CRISIS STAT ROW ─── */
+  .crisis-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2mm;
+    margin-bottom: 2mm;
+  }
+  .crisis-card {
+    background: var(--ink2);
+    border-left: 2px solid var(--card-color, var(--red));
+    padding: 2mm 2mm;
+  }
+  .crisis-card .cn {
+    font-family: var(--display);
+    font-size: 12pt;
+    font-weight: 800;
+    color: var(--card-color, var(--red));
+    line-height: 1;
+  }
+  .crisis-card .cl {
+    font-size: 5.5pt;
+    color: var(--fg3);
+    margin-top: 0.5mm;
+    line-height: 1.3;
+  }
+
+  /* ─── PIPELINE STEPS ─── */
+  .pipeline-list { list-style: none; }
+  .pipeline-item {
+    display: flex;
+    gap: 2.5mm;
+    padding: 2mm 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .pipeline-item:last-child { border-bottom: none; }
+  .p-num {
+    font-family: var(--mono);
+    font-size: 5.5pt;
+    color: var(--cyan);
+    font-weight: 700;
+    flex-shrink: 0;
+    width: 5mm;
+    padding-top: 0.5mm;
+  }
+  .p-content {}
+  .p-title {
+    font-family: var(--display);
+    font-size: 7.5pt;
+    font-weight: 700;
+    color: var(--fg);
+    margin-bottom: 0.5mm;
+  }
+  .p-body { font-size: 6.5pt; color: var(--fg2); line-height: 1.4; }
+  .p-tags { display: flex; gap: 1mm; flex-wrap: wrap; margin-top: 1mm; }
+  .p-tag {
+    font-family: var(--mono);
+    font-size: 4.5pt;
+    padding: 0.5mm 1.5mm;
+    background: rgba(14,124,124,0.08);
+    border: 1px solid rgba(14,124,124,0.2);
+    color: var(--cyan2);
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── PRINCIPLES ─── */
+  .principle-list { list-style: none; }
+  .principle-item {
+    display: flex;
+    gap: 2mm;
+    padding: 1.8mm 0;
+    border-bottom: 1px dashed var(--rule);
+    align-items: flex-start;
+  }
+  .principle-item:last-child { border-bottom: none; }
+  .pr-num {
+    font-family: var(--mono);
+    font-size: 5.5pt;
+    font-weight: 700;
+    color: var(--amber);
+    flex-shrink: 0;
+    padding-top: 0.3mm;
+  }
+  .pr-title {
+    font-family: var(--display);
+    font-size: 6.5pt;
+    font-weight: 700;
+    color: var(--fg);
+    display: block;
+  }
+  .pr-desc { font-size: 5.8pt; color: var(--fg3); line-height: 1.3; margin-top: 0.3mm; }
+
+  /* ─── ARCH TERMINAL (light mode) ─── */
+  .terminal {
+    background: #f9f9fc;
+    border: 1px solid var(--rule);
+    border-top: 2px solid var(--cyan);
+    font-family: var(--mono);
+    font-size: 5.5pt;
+    padding: 2.5mm;
+    line-height: 1.65;
+    color: #334155;
+  }
+  .terminal .hi { color: #0f172a; font-weight: 700; }
+  .terminal .cy { color: var(--cyan); }
+  .terminal .gn { color: var(--green); }
+  .terminal .am { color: var(--amber); }
+  .terminal-head {
+    font-family: var(--mono);
+    font-size: 5pt;
+    letter-spacing: 0.1em;
+    color: var(--fg3);
+    text-transform: uppercase;
+    margin-bottom: 1.5mm;
+    padding-bottom: 1mm;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* ─── FEATURES GRID ─── */
+  .features-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5mm;
+  }
+  .feat-item {
+    background: var(--ink2);
+    border: 1px solid var(--rule);
+    padding: 2mm;
+  }
+  .feat-icon { font-size: 8pt; display: block; margin-bottom: 1mm; }
+  .feat-title { font-family: var(--display); font-size: 6.5pt; font-weight: 700; color: var(--fg); margin-bottom: 0.5mm; }
+  .feat-desc { font-size: 5.5pt; color: var(--fg3); line-height: 1.35; }
+
+  /* ─── CHART WRAPPER (light axis) ─── */
+  .chart-wrap {
+    position: relative;
+    height: 42mm;
+    margin: 2mm 0 1.5mm;
+  }
+  .chart-label {
+    font-family: var(--mono);
+    font-size: 5pt;
+    color: var(--fg3);
+    text-align: center;
+    margin-top: 1mm;
+  }
+
+  /* ─── CITATION LIST ─── */
+  .cite-list { list-style: none; }
+  .cite-item {
+    padding: 1.5mm 0;
+    border-bottom: 1px dashed var(--rule);
+    display: flex;
+    gap: 2mm;
+  }
+  .cite-item:last-child { border-bottom: none; }
+  .cite-num {
+    font-family: var(--mono);
+    font-size: 5pt;
+    color: var(--cyan);
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+  .cite-text { font-size: 5.5pt; color: var(--fg3); line-height: 1.35; }
+  .cite-text strong { color: var(--fg2); }
+
+  /* ─── INSIGHT BOX ─── */
+  .insight {
+    background: var(--ink2);
+    border-left: 3px solid var(--cyan);
+    padding: 2mm 2.5mm;
+    margin: 2mm 0;
+  }
+  .insight p { font-size: 6pt; color: var(--fg2); line-height: 1.4; font-style: italic; }
+  .insight strong { color: var(--cyan); font-style: normal; }
+
+  .insight-amber { border-left-color: var(--amber); }
+  .insight-amber p strong { color: var(--amber); }
+
+  /* ─── VALIDATION BOX ─── */
+  .validation-box {
+    background: rgba(14,124,124,0.05);
+    border: 1px solid rgba(14,124,124,0.2);
+    padding: 2.5mm;
+    margin-top: 2mm;
+    text-align: center;
+  }
+  .validation-box .vn {
+    font-family: var(--display);
+    font-size: 14pt;
+    font-weight: 800;
+    color: var(--cyan);
+    line-height: 1;
+  }
+  .validation-box .vl { font-size: 5.5pt; color: var(--fg2); margin-top: 0.5mm; line-height: 1.35; }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    margin-top: 3mm;
+    border-top: 1px solid var(--rule);
+    padding-top: 2mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-brand {
+    font-family: var(--display);
+    font-size: 8pt;
+    font-weight: 700;
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    gap: 1.5mm;
+  }
+  .footer-disclaimer {
+    font-size: 5pt;
+    color: var(--fg3);
+    font-family: var(--mono);
+    text-align: center;
+    letter-spacing: 0.04em;
+    flex: 1;
+    padding: 0 4mm;
+  }
+  .footer-qr {
+    width: 12mm;
+    height: 12mm;
+    background: var(--panelb);
+    border: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5pt;
+    color: var(--fg3);
+    font-family: var(--mono);
+    text-align: center;
+    padding: 1mm;
+  }
+
+  /* ─── GEO BAR ─── */
+  .geo-bar-wrap { margin: 2mm 0; }
+  .geo-label { font-size: 5.5pt; color: var(--fg3); font-family: var(--mono); margin-bottom: 1mm; letter-spacing: 0.05em; }
+  .geo-bar {
+    height: 5mm;
+    background: #eef2ff;
+    border: 1px solid var(--rule);
+    display: flex;
+    overflow: hidden;
+  }
+  .geo-dhaka {
+    background: linear-gradient(90deg, rgba(185,28,28,0.8), rgba(185,28,28,0.5));
+    width: 80%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5pt;
+    font-family: var(--mono);
+    color: white;
+    font-weight: 700;
+  }
+  .geo-other {
+    width: 20%;
+    background: rgba(100,116,139,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4.5pt;
+    font-family: var(--mono);
+    color: var(--fg3);
+  }
+  .geo-caption { font-size: 4.8pt; color: var(--fg3); margin-top: 0.8mm; line-height: 1.3; }
+
+  /* ─── MRI DENSITY TABLE ─── */
+  .density-table { width: 100%; border-collapse: collapse; margin: 2mm 0; }
+  .density-table th {
+    font-family: var(--mono);
+    font-size: 5pt;
+    color: var(--fg3);
+    text-align: left;
+    padding: 1mm 1.5mm;
+    border-bottom: 1px solid var(--rule);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .density-table td {
+    font-size: 6pt;
+    padding: 1.2mm 1.5mm;
+    border-bottom: 1px solid rgba(226,232,240,0.7);
+    color: var(--fg2);
+  }
+  .density-table tr.bd-row td { color: var(--red); font-weight: 600; }
+  .bar-cell { display: flex; align-items: center; gap: 1.5mm; }
+  .bar-fill {
+    height: 2.5mm;
+    background: var(--bar-c, var(--cyan));
+    border-radius: 0.5mm;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+  .bar-val { font-family: var(--mono); font-size: 5pt; color: var(--fg2); }
+
+  /* ─── DIVIDER ─── */
+  .col-divider { border: none; border-top: 1px dashed var(--rule); margin: 2.5mm 0; }
+
+  @media print {
+    html, body { background: white !important; }
+    .poster { page-break-inside: avoid; background: white; }
+  }
+</style>
+</head>
+<body>
+<div class="poster">
+
+  <!-- ══ HEADER ══ -->
+  <header class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-logo">
+          <span class="hex-sym">⬡</span> NeuroHEX
+        </div>
+        <div class="header-subtitle">Browser-Based AI Neuroradiology Platform · Bangladesh</div>
+        <div class="header-tagline">
+          <em>32-region MRI parcellation · Tumor screening · AI clinical reports</em><br>
+          In 60 seconds. On any laptop. Zero data egress.
+        </div>
+        <div class="header-pills" style="margin-top:2mm;">
+          <span class="pill pill-cyan">SynthSeg · Nature Methods 2023</span>
+          <span class="pill pill-cyan">BraTS 2020 · ONNX</span>
+          <span class="pill pill-cyan">Gemini 2.0 Flash</span>
+          <span class="pill pill-amber">No GPU Required</span>
+          <span class="pill pill-green">Open Source</span>
+          <span class="pill pill-red">BD-Validated · PMC11363468</span>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div class="author">Mufazzer Hossain Anas</div>
+        <div class="affil" style="margin-top:1mm;">neurohex.vercel.app</div>
+        <div style="margin-top:3mm; font-family:var(--mono); font-size:5pt; color:var(--fg3);">TOOLS &amp; STACK</div>
+        <div style="font-family:var(--mono); font-size:5pt; color:var(--cyan); line-height:1.7; margin-top:0.5mm;">
+          NiiVue · WebGL · Three.js<br>
+          FastAPI · Chart.js 4.5.1<br>
+          dcmjs · ONNX Runtime<br>
+          Gemini API · Groq LLaMA
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ STAT STRIP ══ -->
+  <div class="stat-strip">
+    <div class="stat-chip" style="--chip-color:#b91c1c;">
+      <div class="n">160</div>
+      <div class="l">Neurologists for 170M People</div>
+    </div>
+    <div class="stat-chip" style="--chip-color:#b45309;">
+      <div class="n">130,655</div>
+      <div class="l">Annual Stroke Deaths · Bangladesh (2010)</div>
+    </div>
+    <div class="stat-chip" style="--chip-color:#0e7c7c;">
+      <div class="n">32</div>
+      <div class="l">Brain Regions Parcellated</div>
+    </div>
+    <div class="stat-chip" style="--chip-color:#0d6b4a;">
+      <div class="n">0 KB</div>
+      <div class="l">Patient Data Sent to Cloud</div>
+    </div>
+    <div class="stat-chip" style="--chip-color:#6d28d9;">
+      <div class="n">&lt;100s</div>
+      <div class="l">Full Analysis Time · Any CPU</div>
+    </div>
+  </div>
+
+  <!-- ══ BODY COLUMNS ══ -->
+  <div class="body-cols">
+
+    <!-- ════════ COL 1: PROBLEM + PIPELINE ════════ -->
+    <div>
+      <!-- Problem Statement -->
+      <div class="panel">
+        <div class="eyebrow">01 · Problem Statement</div>
+        <div class="panel-title">A healthcare gap <span>no software was built to close.</span></div>
+
+        <div class="crisis-row">
+          <div class="crisis-card" style="--card-color:#b91c1c;">
+            <div class="cn">&lt;1/M</div>
+            <div class="cl">Neurologists per million people. Europe: 9.2 per million</div>
+          </div>
+          <div class="crisis-card" style="--card-color:#b45309;">
+            <div class="cn">14 hrs</div>
+            <div class="cl">Median prehospital stroke delay. IV window: 4.5h</div>
+          </div>
+          <div class="crisis-card" style="--card-color:#6d28d9;">
+            <div class="cn">63%</div>
+            <div class="cl">Epilepsy patients receiving zero treatment</div>
+          </div>
+        </div>
+    
+        <div class="insight">
+          <p>The AI models exist. <strong>SynthSeg, BraTS, brain age prediction</strong> — all peer-reviewed, open-source, weights downloadable. We needed a complete end-to-end pipeline for utilizing them under resource scarcity.</p>
+        </div>
+
+        <!-- BD Workforce Distribution -->
+        <div class="geo-bar-wrap" style="margin-top:2mm;">
+          <div class="geo-label">Geographic distribution of neurologists</div>
+          <div class="geo-bar">
+            <div class="geo-dhaka">~80% → Dhaka Division</div>
+            <div class="geo-other">20% rural</div>
+          </div>
+          <div class="geo-caption">62% of BD's population is rural. Rural doctor density: 1.1/10,000 vs 18.2/10,000 urban. <em>[PMC6186485]</em></div>
+        </div>
+
+        <!-- Dementia stat -->
+        <div class="crisis-row" style="margin-top:2mm; grid-template-columns:1fr 1fr;">
+          <div class="crisis-card" style="--card-color:#0e7c7c;">
+            <div class="cn">8.0%</div>
+            <div class="cl">Bangladeshis 60+ living with dementia. ≈1.37M patients [Lancet, 2023]</div>
+          </div>
+          <div class="crisis-card" style="--card-color:#0e7c7c;">
+            <div class="cn">2.40M</div>
+            <div class="cl">Projected dementia patients by 2041 as BD population ages rapidly</div>
+          </div>
+        </div>
+
+        <!-- MRI density -->
+        <hr class="col-divider"/>
+        <div class="eyebrow">MRI Scanner Density</div>
+        <table class="density-table">
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th>Per Million</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>🇯🇵 Japan</td><td><div class="bar-cell"><div class="bar-fill" style="--bar-c:#0d6b4a;width:28mm;"></div><span class="bar-val">57.4</span></div></td></tr>
+            <tr><td>🇺🇸 USA</td><td><div class="bar-cell"><div class="bar-fill" style="--bar-c:#0d6b4a;width:17mm;"></div><span class="bar-val">34.7</span></div></td></tr>
+            <tr class="bd-row"><td>🇧🇩 Bangladesh</td><td><div class="bar-cell"><div class="bar-fill" style="--bar-c:#b91c1c;width:1mm;"></div><span class="bar-val">&lt;1</span></div></td></tr>
+          </tbody>
+        </table>
+        <div style="font-size:5pt;color:var(--fg3);font-family:var(--mono);margin-top:1mm;">Source: TheGlobalEconomy.com · Aeon MRI Statistics 2024</div>
+      </div>
+
+      <!-- Goals -->
+      <div class="panel">
+        <div class="eyebrow">02 · Core Goals</div>
+        <div class="panel-title">Four imperatives.</div>
+        <div class="features-2col">
+          <div class="feat-item">
+            <span class="feat-icon">🧠</span>
+            <div class="feat-title">AI in Radiology</div>
+            <div class="feat-desc">Peer-reviewed models delivering neuroradiologist-grade analysis at district hospital level.</div>
+          </div>
+          <div class="feat-item">
+            <span class="feat-icon">💸</span>
+            <div class="feat-title">Zero Cost</div>
+            <div class="feat-desc">Replace $50,000/yr software with open-source models. No license. No vendor.</div>
+          </div>
+          <div class="feat-item">
+            <span class="feat-icon">🔒</span>
+            <div class="feat-title">Patient Privacy</div>
+            <div class="feat-desc">All computation in-browser. Zero patient bytes leave the device. HIPAA compliant by architecture.</div>
+          </div>
+          <div class="feat-item">
+            <span class="feat-icon">🇧🇩</span>
+            <div class="feat-title">BD Accessibility</div>
+            <div class="feat-desc">Runs on any laptop, any browser. No GPU, no cloud, no PACS infrastructure required.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ COL 2: PIPELINE + ARCHITECTURE ════════ -->
+    <div>
+      <!-- Pipeline -->
+      <div class="panel">
+        <div class="eyebrow">03 · Analysis Pipeline</div>
+        <div class="panel-title">From raw MRI to <span>clinical report in one click.</span></div>
+        <ul class="pipeline-list">
+          <li class="pipeline-item">
+            <span class="p-num">01</span>
+            <div class="p-content">
+              <div class="p-title">Upload — WebGL MRI Rendering</div>
+              <div class="p-body">Drag .nii, .nii.gz, or .dcm files. NiiVue renders multiplanar views (axial, sagittal, coronal) + full 3D volume using WebGL shaders at 60 fps. A 256³ voxel brain (16M data points) rendered entirely on device.</div>
+              <div class="p-tags"><span class="p-tag">NiiVue WebGL</span><span class="p-tag">dcmjs@0.52</span><span class="p-tag">NIfTI/DICOM</span></div>
+            </div>
+          </li>
+          <li class="pipeline-item">
+            <span class="p-num">02</span>
+            <div class="p-content">
+              <div class="p-title">Segment — SynthSeg </div>
+              <div class="p-body">Billot et al. (Nature Methods 2023) CNN performs true 32-region FreeSurfer parcellation in 45–90s on CPU — vs 8–12h for full FreeSurfer. Hippocampal (labels 17/53), thalamic, caudate, putamen volumes in mm³. Stateless FastAPI backend discards files immediately.</div>
+              <div class="p-tags"><span class="p-tag">SynthSeg CNN</span><span class="p-tag">32 Regions</span><span class="p-tag">FreeSurfer Labels</span></div>
+            </div>
+          </li>
+          <li class="pipeline-item">
+            <span class="p-num">03</span>
+            <div class="p-content">
+              <div class="p-title">Screen — BraTS </div>
+              <div class="p-body">BraTS 2020 ONNX model via FastAPI /tumor endpoint. Outputs peritumoral edema (label 2), enhancing tumor (label 4), necrotic core (label 1) in cm³. Volume &gt;0.5cm³ triggers ICD-10 alert. Fazekas grading (0–3) for white-matter hyperintensities — critical for BD's hypertension-driven WMH burden.</div>
+              <div class="p-tags"><span class="p-tag">BraTS 2020</span><span class="p-tag">ONNX Runtime</span><span class="p-tag">Fazekas Criteria</span></div>
+            </div>
+          </li>
+          <li class="pipeline-item">
+            <span class="p-num">04</span>
+            <div class="p-content">
+              <div class="p-title">Analyze — Decision Support System</div>
+              <div class="p-body">Hippocampal volumes benchmarked vs Raz et al. 2005 age/sex norms. Brain age via Cole et al. 2018 ridge regression — gap &gt;10yr flags accelerated neurodegeneration. ICD-10 codes (G30, G35, I69.3, G20) auto-flagged. BD-validated: MTA score r=−0.350, p=0.005 at NINS&amp;H [PMC11363468].</div>
+              <div class="p-tags"><span class="p-tag">Raz 2005 Norms</span><span class="p-tag">Cole 2018</span><span class="p-tag">ICD-10</span><span class="p-tag">PMC11363468</span></div>
+            </div>
+          </li>
+          <li class="pipeline-item">
+            <span class="p-num">05</span>
+            <div class="p-content">
+              <div class="p-title">Report — Gemini AI Generation</div>
+              <div class="p-body">Gemini 2.0 Flash generates 5-section formal neuroradiology report (TECHNIQUE · FINDINGS · IMPRESSION · DIFFERENTIAL · RECOMMENDATIONS) in 2–3 seconds. Groq LLaMA 3.3 70B as fallback. Bengali interpretation for frontline clinicians. Export: HTML · JSON · PDF.</div>
+              <div class="p-tags"><span class="p-tag">Gemini 2.0 Flash</span><span class="p-tag">Groq Fallback</span><span class="p-tag">Bengali output</span></div>
+            </div>
+          </li>
+        </ul>
+      </div>      
+    </div>
+
+    <!-- ════════ COL 3: FEATURES + CHARTS + VALIDATION ════════ -->
+    <div>
+      <!-- Architecture -->
+      <div class="panel">
+        <div class="eyebrow">04 · System Architecture</div>
+        <div class="panel-title">Browser-first. <span>Backend-optional.</span></div>
+        <div class="terminal">
+          <div class="terminal-head">neurohex_architecture.txt</div>
+<span class="hi">┌─── BROWSER (Any Laptop) ─────────────────┐</span>
+│ <span class="cy">NiiVue WebGL</span>  │  <span class="cy">Three.js@0.182.0</span>        │
+│ MRI multiplanar│  3D brain + surgery planner   │
+│ <span class="cy">Chart.js 4.5.1</span>│  <span class="cy">dcmjs@0.52.0</span>            │
+│ Volumetric viz │  DICOM parsing                │
+<span class="hi">└──────────────────┬───────────────────────┘</span>
+                   <span class="am">│ FastAPI (optional, stateless)</span>
+<span class="hi">┌──────────────────▼───────────────────────┐</span>
+│ <span class="cy">SynthSeg CNN</span>   32-region parcellation     │
+│ <span class="cy">BraTS ONNX</span>     tumor sub-region segm.     │
+│ <span class="cy">Brain Age</span>      Cole 2018 ridge regression  │
+<span class="hi">└──────────────────┬───────────────────────┘</span>
+                   <span class="am">│ Gemini API (Groq fallback)</span>
+<span class="hi">┌──────────────────▼───────────────────────┐</span>
+│  <span class="cy">Gemini 2.0 Flash</span> → 5-section AI Report   │
+│  Export: <span class="gn">HTML</span> · <span class="gn">JSON</span> · <span class="gn">PDF</span> · EHR-ready    │
+<span class="hi">└──────────────────────────────────────────┘</span>
+<span class="gn">DATA EGRESS: 0 KB · HIPAA compliant by design</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="eyebrow">05 · Design Principles</div>
+        <div class="panel-title">Six principles that <span>governed every decision.</span></div>
+        <ul class="principle-list">
+          <li class="principle-item"><span class="pr-num">P1</span><div><span class="pr-title">Zero Data Egress</span><div class="pr-desc">NIfTI parsing, DICOM reading, volumetric analysis, 3D rendering — all in-browser. Zero patient bytes transmitted.</div></div></li>
+          <li class="principle-item"><span class="pr-num">P2</span><div><span class="pr-title">Low-Time &amp; Low-Cost Infrastructure</span><div class="pr-desc">SynthSeg on CPU, not GPU. No expensive cloud compute. No vendor license. Full analysis in &lt;60 seconds.</div></div></li>
+          <li class="principle-item"><span class="pr-num">P3</span><div><span class="pr-title">Graceful Degradation — Never Fail Silently</span><div class="pr-desc">Backend offline → auto fallback to intensity-based segmentation with visible DEMO MODE warning.</div></div></li>
+          <li class="principle-item"><span class="pr-num">P4</span><div><span class="pr-title">Evidence-Based Scientific Foundations &amp; Citation Metrics</span><div class="pr-desc">Every threshold, norm, and model cites peer-reviewed literature. Every footer carries citations.</div></div></li>
+          <li class="principle-item"><span class="pr-num">P5</span><div><span class="pr-title">Multimodal Dual-Language Interpretation</span><div class="pr-desc">English neuroradiology report + Bengali plain-language summary for frontline district GPs.</div></div></li>
+          <li class="principle-item"><span class="pr-num">P6</span><div><span class="pr-title">Advanced Visualization, Interactivity &amp; Pre-surgery-planning</span><div class="pr-desc">3D surgical pin planner, 9-axis longitudinal radar chart, disease atlas with 5 conditions — clinical utility beyond reporting.</div></div></li>
+        </ul>
+      </div>        
+    </div>
+
+  </div><!-- /body-cols -->
+
+  <!-- ══ FOOTER ══ -->
+  <footer class="footer">
+    <div class="footer-brand">⬡ NeuroHEX</div>
+    <div class="footer-disclaimer">
+      NeuroHEX · Mufazzer Hossain Anas · neurohex.vercel.app<br>
+      Segmentation: SynthSeg (Billot, Nature Methods 2023) · Tumor: BraTS 2020 (Menze, IEEE TMI 2015) · BD Validation: PMC11363468 · Stroke: PMC11874345<br>
+      <em>Not a substitute for clinical diagnosis. For research and educational use.</em>
+    </div>
+    <div class="footer-qr">Demo:<br>patient.html</div>
+  </footer>
+
+</div><!-- /poster -->
+
+<script>
+  // Optional charts removed for brevity but keeping framework to avoid errors; no active chart elements in light version.
+</script>
+</body>
+</html>

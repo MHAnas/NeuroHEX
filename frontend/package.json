@@ -1,0 +1,25 @@
+{
+  "name": "particle-1",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^7.2.4"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@niivue/niivue": "^0.68.2",
+    "@tensorflow/tfjs": "^4.22.0",
+    "chart.js": "^4.5.1",
+    "dcmjs": "^0.52.0",
+    "gsap": "^3.14.2",
+    "jspdf": "^4.2.1",
+    "lil-gui": "^0.21.0",
+    "three": "^0.182.0"
+  }
+}

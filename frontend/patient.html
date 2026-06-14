@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroHEX — Patient Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/patient.css" />
+  </head>
+  <body>
+    <!-- ── TOP NAV ── -->
+    <nav id="top-nav">
+      <div class="nav-brand">⬡ NeuroHEX</div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link"
+          ><span class="nav-icon">⊞</span> Overview</a
+        >
+        <a
+          href="patient.html"
+          class="nav-link nav-link-active nav-link-patient"
+        >
+          <span class="nav-icon">◉</span> Analyze patient
+        </a>
+        <a href="comparison.html" class="nav-link"
+          ><span class="nav-icon">⇌</span> Compare</a
+        >
+        <a href="atlas.html" class="nav-link"
+          ><span class="nav-icon">◈</span> 3D Atlas</a
+        >
+      </div>
+    </nav>
+
+    <!-- ── 3-COLUMN LAYOUT ── -->
+    <div id="patient-layout">
+      <!-- ─────────── LEFT PANEL ─────────── -->
+      <aside id="left-panel">
+        <div class="lp-section">
+          <div class="lp-title"><span class="lp-dot"></span>PATIENT RECORD</div>
+          <div class="patient-form">
+            <div class="form-group">
+              <label class="form-label">PATIENT ID</label>
+              <input
+                class="form-input"
+                id="patient-id"
+                type="text"
+                placeholder="PT-0000"
+              />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">AGE</label>
+                <input
+                  class="form-input"
+                  id="patient-age"
+                  type="number"
+                  placeholder="—"
+                  min="0"
+                  max="120"
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">SEX</label>
+                <select class="form-input form-select" id="patient-sex">
+                  <option value="">—</option>
+                  <option value="M">Male</option>
+                  <option value="F">Female</option>
+                  <option value="O">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">SCAN DATE</label>
+              <input class="form-input" id="scan-date" type="date" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">CLINICAL NOTES</label>
+              <textarea
+                class="form-input form-textarea"
+                id="clinical-notes"
+                placeholder="Presenting symptoms, history…"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="lp-section">
+          <div class="lp-title"><span class="lp-dot"></span>MRI UPLOAD</div>
+          <div id="drop-zone" class="drop-zone">
+            <input type="file" id="file-input" accept=".nii,.nii.gz" hidden />
+            <div class="drop-icon">⬡</div>
+            <div class="drop-title">Drop NIfTI File</div>
+            <div class="drop-sub">.nii · .nii.gz</div>
+            <button class="drop-btn" id="browse-btn">Browse Files</button>
+          </div>
+          <div class="demo-scan-row">
+            <div class="demo-scan-label">No scan? Try the built-in demo</div>
+            <button id="demo-scan-btn" class="demo-scan-btn">
+              <span class="demo-icon">▶</span> Run Demo Scan
+            </button>
+          </div>
+          <div id="file-badge" class="file-badge hidden">
+            <span class="file-badge-icon">📁</span>
+            <span id="file-name-el" class="file-badge-name"></span>
+            <span id="file-size-el" class="file-badge-size"></span>
+            <button id="clear-file-btn" class="file-badge-clear">✕</button>
+          </div>
+        </div>
+
+        <div class="lp-section hidden" id="meta-section">
+          <div class="lp-title">
+            <span class="lp-dot lp-dot-green"></span>SCAN METADATA
+          </div>
+          <div id="meta-grid" class="meta-grid"></div>
+        </div>
+
+        <div class="lp-section hidden" id="histogram-section">
+          <div class="lp-title">
+            <span class="lp-dot"></span>INTENSITY PROFILE
+          </div>
+          <canvas
+            id="histogram-canvas"
+            class="histogram-canvas"
+            width="244"
+            height="64"
+          ></canvas>
+        </div>
+        <!-- add this after the histogram-section div, inside #left-panel -->
+        <div class="lp-section" id="gui-section">
+          <div id="lp-gui-mount"></div>
+        </div>
+      </aside>
+
+      <!-- ─────────── CENTER VIEWER ─────────── -->
+      <main id="viewer-main">
+        <canvas id="niivue-canvas"></canvas>
+
+        <!-- Empty state -->
+        <div id="empty-state" class="empty-state">
+          <div class="es-hex">⬡</div>
+          <div class="es-title">No Scan Loaded</div>
+          <div class="es-sub">
+            Upload a NIfTI MRI file to begin patient-specific analysis
+          </div>
+          <div class="es-hint">← Drop a file in the left panel</div>
+        </div>
+
+        <!-- Processing overlay -->
+        <div id="proc-overlay" class="proc-overlay hidden">
+          <div class="proc-box">
+            <svg class="proc-ring" width="60" height="60" viewBox="0 0 60 60">
+              <circle
+                cx="30"
+                cy="30"
+                r="26"
+                stroke="rgba(0,229,255,0.12)"
+                stroke-width="2.5"
+                fill="none"
+              />
+              <circle
+                cx="30"
+                cy="30"
+                r="26"
+                stroke="#00e5ff"
+                stroke-width="2.5"
+                fill="none"
+                stroke-dasharray="44 120"
+                stroke-linecap="round"
+              >
+                <animateTransform
+                  attributeName="transform"
+                  type="rotate"
+                  from="0 30 30"
+                  to="360 30 30"
+                  dur="1.2s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+            </svg>
+            <div class="proc-title">AI ANALYSIS RUNNING</div>
+            <div id="proc-steps" class="proc-steps"></div>
+            <div class="proc-bar-track">
+              <div id="proc-bar" class="proc-bar"></div>
+            </div>
+            <div id="proc-label" class="proc-label">Initializing…</div>
+          </div>
+        </div>
+
+        <!-- View toolbar -->
+        <div id="view-toolbar">
+          <div class="vt-group">
+            <button class="vt-btn active" data-view="multiplanar">4P</button>
+            <button class="vt-btn" data-view="axial">AX</button>
+            <button class="vt-btn" data-view="sagittal">SAG</button>
+            <button class="vt-btn" data-view="coronal">COR</button>
+            <button class="vt-btn" data-view="render">3D</button>
+          </div>
+          <div class="vt-sep"></div>
+          <div class="vt-group">
+            <span class="vt-label">CMAP</span>
+            <select class="vt-select" id="colormap-select">
+              <option value="gray">Gray</option>
+              <option value="hot">Hot</option>
+              <option value="cool">Cool</option>
+              <option value="viridis">Viridis</option>
+              <option value="inferno">Inferno</option>
+              <option value="plasma">Plasma</option>
+            </select>
+          </div>
+          <div class="vt-sep"></div>
+          <div class="vt-group">
+            <span class="vt-label">SEG α</span>
+            <input
+              class="vt-slider"
+              id="seg-opacity"
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value="0.65"
+            />
+          </div>
+          <div class="vt-sep"></div>
+          <div class="vt-group">
+            <button
+              class="vt-btn"
+              id="toggle-seg-btn"
+              title="Toggle segmentation overlay"
+            >
+              SEG
+            </button>
+            <button
+              class="vt-btn"
+              id="toggle-crosshair-btn"
+              title="Toggle crosshair"
+            >
+              ⊕
+            </button>
+            <button class="vt-btn" id="screenshot-btn" title="Screenshot">
+              📷
+            </button>
+          </div>
+          <div class="vt-spacer"></div>
+          <button id="run-btn" class="run-btn" disabled>
+            <span class="run-icon">▶</span> RUN AI ANALYSIS
+          </button>
+        </div>
+      </main>
+
+      <!-- ─────────── RIGHT PANEL ─────────── -->
+      <aside id="right-panel">
+        <!-- Idle state -->
+        <div id="rp-idle" class="rp-idle">
+          <div class="rp-idle-hex">⬡</div>
+          <div class="rp-idle-title">Awaiting Analysis</div>
+          <div class="rp-idle-sub">
+            Upload an MRI scan and run the AI pipeline to view patient-specific
+            neural metrics
+          </div>
+          <ul class="rp-features">
+            <li><span class="feat-dot">◈</span>Brain volume by tissue type</li>
+            <li><span class="feat-dot">◈</span>Region parcellation metrics</li>
+            <li><span class="feat-dot">◈</span>Hemisphere asymmetry index</li>
+            <li><span class="feat-dot">◈</span>Anomaly detection flags</li>
+            <li><span class="feat-dot">◈</span>Clinical report export</li>
+          </ul>
+        </div>
+
+        <!-- Results -->
+        <div id="rp-results" class="hidden">
+          <div class="rp-section">
+            <div class="rp-title">ANALYSIS SUMMARY</div>
+            <div class="summary-card">
+              <div class="summary-score-wrap">
+                <div class="score-ring-wrap">
+                  <svg width="76" height="76" viewBox="0 0 76 76">
+                    <circle
+                      cx="38"
+                      cy="38"
+                      r="32"
+                      stroke="rgba(0,229,255,0.1)"
+                      stroke-width="4"
+                      fill="none"
+                    />
+                    <circle
+                      cx="38"
+                      cy="38"
+                      r="32"
+                      stroke="#00e5ff"
+                      stroke-width="4"
+                      fill="none"
+                      stroke-dasharray="201"
+                      stroke-dashoffset="201"
+                      stroke-linecap="round"
+                      transform="rotate(-90 38 38)"
+                      id="score-arc"
+                    />
+                  </svg>
+                  <span id="score-value" class="score-value">—</span>
+                </div>
+                <div>
+                  <div class="score-label">NORMALCY INDEX</div>
+                  <div id="score-desc" class="score-desc">—</div>
+                </div>
+              </div>
+              <div id="summary-flags" class="summary-flags"></div>
+            </div>
+          </div>
+
+          <div class="rp-section">
+            <div class="rp-title">
+              VOLUMETRICS <span class="unit-tag">cm³</span>
+            </div>
+            <div id="volume-metrics" class="metric-list"></div>
+          </div>
+
+          <div class="rp-section">
+            <div class="rp-title">HEMISPHERE COMPARISON</div>
+            <div id="hemi-chart" class="hemi-chart"></div>
+          </div>
+
+          <div class="rp-section">
+            <div class="rp-title">REGION PARCELLATION</div>
+            <div id="region-table" class="region-table"></div>
+          </div>
+
+          <div class="rp-section">
+            <div class="rp-title">CLINICAL INDICATORS</div>
+            <div id="clinical-flags" class="flags-list"></div>
+          </div>
+
+          <div class="rp-section">
+            <button id="export-btn" class="export-btn">
+              ↓ EXPORT CLINICAL REPORT
+            </button>
+            <div class="export-note">
+              Generates downloadable HTML report with all metrics
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <!-- end #patient-layout -->
+
+    <script type="module" src="/src/patient.js"></script>
+  </body>
+</html>

@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroHEX — MRI Comparison Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/comparison.css" />
+  </head>
+  <body>
+
+    <!-- ── SCAN-LINE OVERLAY ── -->
+    <div id="scanline-overlay" aria-hidden="true"></div>
+
+    <!-- ── DEMO MODE BANNER ── -->
+    <div id="demo-mode-banner" style="display:none"></div>
+
+    <!-- ── TOP NAV ── -->
+    <nav id="top-nav">
+      <div class="nav-brand">⬡ NeuroHEX</div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link"><span class="nav-icon">⊞</span> Overview</a>
+        <a href="patient.html" class="nav-link nav-link-patient">
+          <span class="nav-icon">◉</span> Analyze patient
+        </a>
+        <a href="comparison.html" class="nav-link nav-link-ai nav-link-active"><span class="nav-icon">⇌</span> Compare</a>
+        <a href="atlas.html" class="nav-link "><span class="nav-icon">◈</span> 3D Atlas</a>
+      </div>
+      <!-- Live delta indicator -->
+      <div id="nav-delta-pill" class="nav-delta-pill hidden">
+        <span class="ndp-dot"></span>
+        <span id="nav-delta-text">DELTA READY</span>
+      </div>
+    </nav>
+
+    <!-- ══════════════════════════════════════
+         MAIN LAYOUT
+    ══════════════════════════════════════ -->
+    <div id="comparison-layout">
+
+      <!-- ─── LEFT CONTROL STRIP ─── -->
+      <aside id="ctrl-strip">
+
+        <!-- Mode selector -->
+        <div class="cs-block">
+          <div class="cs-title"><span class="cs-dot"></span>COMPARE MODE</div>
+          <div class="mode-tabs">
+            <button class="mode-tab mode-tab-active" data-mode="longitudinal" title="Same patient, two timepoints">
+              <span class="mt-icon">📅</span>
+              <span class="mt-label">LONGITUDINAL</span>
+              <span class="mt-sub">Past vs Present</span>
+            </button>
+            <button class="mode-tab" data-mode="normative" title="Patient vs MNI reference atlas">
+              <span class="mt-icon">📐</span>
+              <span class="mt-label">NORMATIVE</span>
+              <span class="mt-sub">Patient vs Atlas</span>
+            </button>
+            <button class="mode-tab" data-mode="custom" title="Any two arbitrary scans">
+              <span class="mt-icon">⬡</span>
+              <span class="mt-label">CUSTOM</span>
+              <span class="mt-sub">Two Arbitrary Scans</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scan A -->
+        <div class="cs-block" id="scan-a-block">
+          <div class="cs-title"><span class="cs-dot cs-dot-cyan"></span>SCAN A <span class="scan-tag scan-tag-a">REFERENCE</span></div>
+
+          <div class="cs-meta-inputs" id="meta-a">
+            <div class="form-group">
+              <label class="form-label">PATIENT ID</label>
+              <input class="form-input" id="pid-a" type="text" placeholder="PT-0000" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">SCAN DATE</label>
+              <input class="form-input" id="date-a" type="date" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">AGE AT SCAN</label>
+              <input class="form-input" id="age-a" type="number" placeholder="—" min="0" max="120" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">SEX</label>
+              <select class="form-input form-select" id="sex-a">
+                <option value="">—</option>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+                <option value="O">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">LABEL</label>
+              <input class="form-input" id="label-a" type="text" placeholder="Baseline 2023" />
+            </div>
+          </div>
+
+          <div id="drop-a" class="drop-zone">
+            <input type="file" id="file-a" accept=".nii,.nii.gz,.dcm" hidden />
+            <div class="drop-icon">⬡</div>
+            <div class="drop-title">Drop Scan A</div>
+            <div class="drop-sub">.nii · .nii.gz · .dcm</div>
+            <button class="drop-btn" id="browse-a">Browse</button>
+          </div>
+          <div id="badge-a" class="file-badge hidden">
+            <span class="file-badge-icon">📁</span>
+            <span id="name-a" class="file-badge-name"></span>
+            <span id="size-a" class="file-badge-size"></span>
+            <button id="clear-a" class="file-badge-clear">✕</button>
+          </div>
+          <div id="meta-display-a" class="scan-meta-display hidden"></div>
+        </div>
+
+        <!-- Scan B -->
+        <div class="cs-block" id="scan-b-block">
+          <div class="cs-title"><span class="cs-dot cs-dot-amber"></span>SCAN B <span class="scan-tag scan-tag-b">FOLLOW-UP</span></div>
+
+          <!-- Normative mode: use MNI atlas -->
+          <div id="normative-notice" class="normative-notice hidden">
+            <div class="nn-icon">📐</div>
+            <div class="nn-text">MNI152 standard brain will be loaded automatically as the normative reference. Upload patient scan above.</div>
+            <div class="nn-url">niivue.github.io/niivue-demo-images/mni152.nii.gz</div>
+          </div>
+
+          <div class="cs-meta-inputs" id="meta-b">
+            <div class="form-group">
+              <label class="form-label">SCAN DATE</label>
+              <input class="form-input" id="date-b" type="date" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">AGE AT SCAN</label>
+              <input class="form-input" id="age-b" type="number" placeholder="—" min="0" max="120" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">LABEL</label>
+              <input class="form-input" id="label-b" type="text" placeholder="Follow-up 2025" />
+            </div>
+          </div>
+
+          <div id="drop-b" class="drop-zone">
+            <input type="file" id="file-b" accept=".nii,.nii.gz,.dcm" hidden />
+            <div class="drop-icon">⬡</div>
+            <div class="drop-title">Drop Scan B</div>
+            <div class="drop-sub">.nii · .nii.gz · .dcm</div>
+            <button class="drop-btn" id="browse-b">Browse</button>
+          </div>
+          <div id="badge-b" class="file-badge hidden">
+            <span class="file-badge-icon">📁</span>
+            <span id="name-b" class="file-badge-name"></span>
+            <span id="size-b" class="file-badge-size"></span>
+            <button id="clear-b" class="file-badge-clear">✕</button>
+          </div>
+          <div id="meta-display-b" class="scan-meta-display hidden"></div>
+        </div>
+
+        <!-- Compare + Demo buttons -->
+        <div class="cs-block">
+          <button id="compare-btn" class="compare-btn" disabled>
+            <span class="cb-ring"></span>
+            <span class="cb-icon">⇌</span>
+            <span class="cb-label">RUN COMPARISON</span>
+          </button>
+          <div class="compare-hint" id="compare-hint">Upload both scans to begin</div>
+          <div class="compare-timing">⏱ SynthSeg takes ~60s per scan · Total ~2–3 min</div>
+          <button id="demo-compare-btn" class="cs-util-btn" style="margin-top:8px">◈ Load Demo Comparison</button>
+        </div>
+
+        <!-- View controls -->
+        <div class="cs-block" id="view-ctrl-block">
+          <div class="cs-title"><span class="cs-dot"></span>VIEW OPTIONS</div>
+          <div class="vopt-rows">
+            <div class="vopt-row">
+              <span class="vopt-label">LAYOUT</span>
+              <div class="vopt-btns">
+                <button class="vopt-btn vopt-active" data-layout="side-by-side">◫</button>
+                <button class="vopt-btn" data-layout="overlay">⊕</button>
+                <button class="vopt-btn" data-layout="difference">∆</button>
+              </div>
+            </div>
+            <div class="vopt-row">
+              <span class="vopt-label">VIEW</span>
+              <div class="vopt-btns">
+                <button class="vopt-btn vopt-view vopt-active" data-view="axial">AX</button>
+                <button class="vopt-btn vopt-view" data-view="sagittal">SAG</button>
+                <button class="vopt-btn vopt-view" data-view="coronal">COR</button>
+                <button class="vopt-btn vopt-view" data-view="multiplanar">4P</button>
+              </div>
+            </div>
+            <div class="vopt-row">
+              <span class="vopt-label">SYNC</span>
+              <label class="toggle-wrap">
+                <input type="checkbox" id="sync-toggle" checked />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="toggle-lbl">Crosshair Sync</span>
+              </label>
+            </div>
+            <div class="vopt-row">
+              <span class="vopt-label">CMAP A</span>
+              <select class="vopt-select" id="cmap-a">
+                <option value="gray">Gray</option>
+                <option value="hot">Hot</option>
+                <option value="cool">Cool</option>
+                <option value="viridis">Viridis</option>
+                <option value="inferno">Inferno</option>
+              </select>
+            </div>
+            <div class="vopt-row">
+              <span class="vopt-label">CMAP B</span>
+              <select class="vopt-select" id="cmap-b">
+                <option value="gray">Gray</option>
+                <option value="hot">Hot</option>
+                <option value="viridis">Viridis</option>
+                <option value="cool">Cool</option>
+                <option value="inferno">Inferno</option>
+              </select>
+            </div>
+            <div class="vopt-row">
+              <span class="vopt-label">OVERLAY α</span>
+              <input type="range" class="vopt-slider" id="overlay-alpha" min="0" max="1" step="0.05" value="0.5" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Utilities -->
+        <div class="cs-block">
+          <button class="cs-util-btn" id="screenshot-btn">📷 Screenshot</button>
+          <button class="cs-util-btn" id="export-report-btn" disabled>↓ Export Report</button>
+          <button class="cs-util-btn" id="clear-history-btn">🗑 Clear Session History</button>
+        </div>
+
+      </aside>
+
+      <!-- ─── CENTER DUAL VIEWER ─── -->
+      <main id="viewer-area">
+
+        <!-- Empty state -->
+        <div id="empty-state" class="empty-state">
+          <div class="es-bg-grid"></div>
+          <div class="es-content">
+            <div class="es-hex-wrap">
+              <div class="es-hex-outer">⬡</div>
+              <div class="es-hex-inner">⇌</div>
+            </div>
+            <div class="es-title">MRI Comparison Engine</div>
+            <div class="es-sub">Longitudinal atrophy tracking · Normative atlas comparison · Voxel-level delta maps</div>
+            <div class="es-steps">
+              <div class="es-step"><span class="es-step-num">01</span><span>Upload scan A (reference / baseline)</span></div>
+              <div class="es-step"><span class="es-step-num">02</span><span>Upload scan B (follow-up / comparison)</span></div>
+              <div class="es-step"><span class="es-step-num">03</span><span>Run comparison to see delta metrics</span></div>
+            </div>
+            <div class="es-badges">
+              <span class="es-badge">Longitudinal</span>
+              <span class="es-badge">Normative Atlas</span>
+              <span class="es-badge">Voxel Δ Map</span>
+              <span class="es-badge">AI Scoring</span>
+              <span class="es-badge">SynthSeg Real AI</span>
+              <span class="es-badge">Gemini Multimodal</span>
+            </div>
+            <div class="low-cost-badge" style="margin-top:8px">◈ Browser-based · No GPU · No data leaves device</div>
+          </div>
+        </div>
+
+        <!-- Processing overlay -->
+        <div id="proc-overlay" class="proc-overlay hidden">
+          <div class="proc-box">
+            <div class="proc-hex-anim">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <polygon points="40,8 68,24 68,56 40,72 12,56 12,24"
+                  stroke="rgba(0,229,255,0.15)" stroke-width="1.5" fill="none"/>
+                <polygon points="40,8 68,24 68,56 40,72 12,56 12,24"
+                  stroke="#00e5ff" stroke-width="1.5" fill="none"
+                  stroke-dasharray="160" stroke-dashoffset="160">
+                  <animate attributeName="stroke-dashoffset" from="160" to="0"
+                    dur="1.4s" repeatCount="indefinite" />
+                </polygon>
+                <text x="40" y="44" text-anchor="middle" fill="#00e5ff"
+                  font-family="Syne" font-size="14" font-weight="800">⇌</text>
+              </svg>
+            </div>
+            <div class="proc-title" id="proc-title">INITIALIZING</div>
+            <div class="proc-steps" id="proc-steps"></div>
+            <div class="proc-bar-track">
+              <div id="proc-bar" class="proc-bar"></div>
+              <div id="proc-glow" class="proc-glow"></div>
+            </div>
+            <div id="proc-label" class="proc-label">Starting…</div>
+          </div>
+        </div>
+
+        <!-- Dual viewer container -->
+        <div id="dual-viewer" class="hidden">
+
+          <!-- Scan A pane -->
+          <div class="viewer-pane" id="pane-a">
+            <div class="pane-header">
+              <span class="pane-dot pane-dot-a"></span>
+              <span class="pane-scan-label" id="pane-label-a">SCAN A — REFERENCE</span>
+              <div class="pane-header-right">
+                <span class="pane-date" id="pane-date-a">—</span>
+              </div>
+            </div>
+            <canvas id="canvas-a" class="viewer-canvas"></canvas>
+            <div class="voxel-readout" id="readout-a">
+              <span class="vr-label">VOX</span>
+              <span class="vr-val" id="vox-a">—</span>
+            </div>
+          </div>
+
+          <!-- Divider / swipe handle -->
+          <div id="viewer-divider">
+            <div class="divider-line"></div>
+            <div class="divider-handle" id="divider-handle">
+              <div class="dh-arrows">◀ ▶</div>
+            </div>
+            <div class="divider-line"></div>
+          </div>
+
+          <!-- Scan B pane -->
+          <div class="viewer-pane" id="pane-b">
+            <div class="pane-header">
+              <span class="pane-dot pane-dot-b"></span>
+              <span class="pane-scan-label" id="pane-label-b">SCAN B — FOLLOW-UP</span>
+              <div class="pane-header-right">
+                <span class="pane-date" id="pane-date-b">—</span>
+              </div>
+            </div>
+            <canvas id="canvas-b" class="viewer-canvas"></canvas>
+            <div class="voxel-readout" id="readout-b">
+              <span class="vr-label">VOX</span>
+              <span class="vr-val" id="vox-b">—</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Overlay viewer -->
+        <div id="overlay-viewer" class="hidden">
+          <div class="viewer-pane" id="pane-overlay" style="width:100%;height:100%">
+            <div class="pane-header">
+              <span class="pane-dot" style="background:linear-gradient(90deg,var(--cyan),var(--amber))"></span>
+              <span class="pane-scan-label" id="overlay-mode-label">OVERLAY VIEW</span>
+              <div class="pane-header-right">
+                <span style="font-size:8px;color:var(--fg-dim)">Drag slider below to blend</span>
+              </div>
+            </div>
+            <canvas id="canvas-overlay" class="viewer-canvas"></canvas>
+            <div class="blend-bar">
+              <span class="blend-lbl blend-lbl-a">A</span>
+              <input type="range" id="blend-slider" min="0" max="1" step="0.01" value="0.5" class="blend-input" />
+              <span class="blend-lbl blend-lbl-b">B</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Difference map viewer -->
+        <div id="diff-viewer" class="hidden">
+          <div class="viewer-pane" id="pane-diff" style="width:100%;height:100%">
+            <div class="pane-header">
+              <span class="pane-dot" style="background:var(--red)"></span>
+              <span class="pane-scan-label">VOXEL DIFFERENCE MAP (Δ B−A)</span>
+              <div class="pane-header-right">
+                <span class="diff-legend">
+                  <span style="color:var(--red)">▪</span> Loss
+                  <span style="color:var(--fg-dim);margin:0 4px">·</span>
+                  <span style="color:var(--green)">▪</span> Gain
+                </span>
+              </div>
+            </div>
+            <canvas id="canvas-diff" class="viewer-canvas"></canvas>
+            <div id="diff-heatmap-overlay" class="diff-heatmap-overlay"></div>
+          </div>
+        </div>
+
+        <!-- Bottom toolbar -->
+        <div id="viewer-toolbar" class="viewer-toolbar hidden">
+          <div class="tb-group">
+            <button class="tb-btn" id="tb-sync" title="Sync crosshairs">⊕ SYNC</button>
+            <button class="tb-btn" id="tb-reset" title="Reset view">↺ RESET</button>
+          </div>
+          <div class="tb-sep"></div>
+          <div class="tb-group">
+            <span class="tb-label">SLICE</span>
+            <button class="tb-btn tb-slice" data-view="axial">AX</button>
+            <button class="tb-btn tb-slice" data-view="sagittal">SAG</button>
+            <button class="tb-btn tb-slice" data-view="coronal">COR</button>
+            <button class="tb-btn tb-slice" data-view="multiplanar">4P</button>
+          </div>
+          <div class="tb-sep"></div>
+          <div class="tb-spacer"></div>
+          <div class="tb-group">
+            <span class="tb-label" style="color:var(--cyan)">LAYOUT</span>
+            <button class="tb-btn tb-layout tb-layout-active" data-layout="side-by-side">◫ SIDE</button>
+            <button class="tb-btn tb-layout" data-layout="overlay">⊕ OVERLAY</button>
+            <button class="tb-btn tb-layout" data-layout="difference">∆ DIFF</button>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- ─── RIGHT RESULTS PANEL ─── -->
+      <aside id="results-panel">
+
+        <!-- Idle state -->
+        <div id="rp-idle">
+          <div class="rp-idle-hex">⇌</div>
+          <div class="rp-idle-title">Delta Analysis</div>
+          <div class="rp-idle-sub">Upload and compare two scans to unlock comprehensive volumetric delta analysis</div>
+          <div class="rp-feature-list">
+            <div class="rp-feat"><span class="rp-feat-icon">📊</span><div><div class="rp-feat-title">Volume Delta</div><div class="rp-feat-sub">Tissue change in cm³ and %</div></div></div>
+            <div class="rp-feat"><span class="rp-feat-icon">🧬</span><div><div class="rp-feat-title">Atrophy Velocity</div><div class="rp-feat-sub">Annual rate vs normative range</div></div></div>
+            <div class="rp-feat"><span class="rp-feat-icon">🧠</span><div><div class="rp-feat-title">Regional Analysis</div><div class="rp-feat-sub">Per-structure volume change</div></div></div>
+            <div class="rp-feat"><span class="rp-feat-icon">⚠</span><div><div class="rp-feat-title">Clinical Alerts</div><div class="rp-feat-sub">Threshold-based ICD-10 flags</div></div></div>
+            <div class="rp-feat"><span class="rp-feat-icon">📈</span><div><div class="rp-feat-title">Radar Chart</div><div class="rp-feat-sub">Multi-metric visual comparison</div></div></div>
+            <div class="rp-feat"><span class="rp-feat-icon">🤖</span><div><div class="rp-feat-title">AI Progression Score</div><div class="rp-feat-sub">Gemini 2.0 Flash multimodal</div></div></div>
+          </div>
+          <div class="low-cost-badge" style="margin-top:12px;width:100%">◈ Browser-based · No GPU · No data leaves device</div>
+        </div>
+
+        <!-- Results (injected after analysis) -->
+        <div id="rp-results" class="hidden">
+          <!-- Injected dynamically by JS -->
+        </div>
+
+      </aside>
+
+    </div><!-- /comparison-layout -->
+
+    <script type="module" src="/src/comparison.js"></script>
+  </body>
+</html>
