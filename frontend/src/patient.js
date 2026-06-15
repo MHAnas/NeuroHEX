@@ -2768,49 +2768,55 @@ async function exportPDF() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Building PDF…' }
 
   try {
-    
-    const d       = analysisData
+
+    const d        = analysisData
     const brainAge = computeBrainAge(d)
-    const active  = evalRules(d)
-    const pid     = document.getElementById('patient-id')?.value   || 'N/A'
-    const age     = document.getElementById('patient-age')?.value  || 'N/A'
-    const sex     = document.getElementById('patient-sex')?.value  || 'N/A'
-    const dt      = document.getElementById('scan-date')?.value    || new Date().toISOString().split('T')[0]
-    const notes   = document.getElementById('clinical-notes')?.value || '—'
-    const aiText  = document.getElementById('ai-report-pre')?.textContent?.trim() || ''
+    const active   = evalRules(d)
+    const pid      = document.getElementById('patient-id')?.value   || 'N/A'
+    const age      = document.getElementById('patient-age')?.value  || 'N/A'
+    const sex      = document.getElementById('patient-sex')?.value  || 'N/A'
+    const dt       = document.getElementById('scan-date')?.value    || new Date().toISOString().split('T')[0]
+    const notes    = document.getElementById('clinical-notes')?.value || '—'
+    const aiText   = document.getElementById('ai-report-pre')?.textContent?.trim() || ''
 
-    const doc  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    const PW   = 210   // page width  mm
-    const PH   = 297   // page height mm
-    const ML   = 18    // margin left
-    const MR   = 18    // margin right
-    const CW   = PW - ML - MR   // content width
-    let   y    = 0     // cursor
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const PW  = 210
+    const PH  = 297
+    const ML  = 18
+    const MR  = 18
+    const CW  = PW - ML - MR
+    let   y   = 0
 
-    // ── Colour palette ──────────────────────────────────────────────────────
+    // ── Colour palette — true high-contrast light theme ─────────────────────
+    // Ink-on-paper medical report aesthetic: no grey cards, no washed tones.
     const C = {
-      bg:      [255, 255, 255],
-      cyan:    [0,  120, 180],
-      green:   [20, 160,  70],
-      amber:   [180, 110,   0],
-      red:     [200,  30,  60],
-      fg:      [30,  40,  50],
-      fgDim:   [100, 120, 140],
-      border:  [200, 220, 235],
-      white:   [255, 255, 255],
-      cardBg:  [245, 248, 252],
+      white:     [255, 255, 255],
+      offWhite:  [248, 249, 251],   // barely-there page tint
+      ink:       [10,  12,  20 ],   // near-black for all body text
+      inkMid:    [55,  62,  80 ],   // secondary labels — dark enough to read
+      rule:      [180, 185, 195],   // hairline dividers
+      accent:    [0,   70,  140],   // header / cyan brand (dark, readable)
+      accentPale:[230, 240, 252],   // tinted panel fill (hero band)
+      green:     [10,  120,  50],   // normal / ok
+      greenPale: [224, 245, 232],
+      amber:     [140,  80,   0],   // warn — dark amber, not yellow
+      amberPale: [255, 243, 220],
+      red:       [170,  15,  30],   // alert — deep crimson
+      redPale:   [253, 228, 230],
+      purple:    [100,  50, 180],   // necrotic
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
     const setFill   = rgb => doc.setFillColor(...rgb)
     const setStroke = rgb => doc.setDrawColor(...rgb)
     const setTxt    = rgb => doc.setTextColor(...rgb)
-    const setFont   = (style = 'normal', size = 9) => {
-      doc.setFont('courier', style)
-      doc.setFontSize(size)
-    }
 
-    // Wrap + print text, return new Y. Adds new page automatically.
+    // Two font roles: data (Courier for monospaced numerics) and label (Helvetica)
+    const dataFont  = (style = 'normal', size = 9) => { doc.setFont('courier',   style); doc.setFontSize(size) }
+    const labelFont = (style = 'normal', size = 8) => { doc.setFont('helvetica', style); doc.setFontSize(size) }
+
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
+
     const printWrapped = (text, x, startY, maxW, lineH = 5) => {
       const lines = doc.splitTextToSize(String(text), maxW)
       lines.forEach(ln => {
@@ -2821,241 +2827,366 @@ async function exportPDF() {
       return startY
     }
 
-    // Section header bar
+    // ── Page background (plain white) ───────────────────────────────────────
+    function drawPageBg() {
+      setFill(C.white)
+      doc.rect(0, 0, PW, PH, 'F')
+    }
+
+    // ── Header band ─────────────────────────────────────────────────────────
+    // Dark accent bar at the top — NEUROHEX white on accent, right side patient ID
+    function drawPageHeader() {
+      setFill(C.accent)
+      doc.rect(0, 0, PW, 14, 'F')
+
+      setTxt(C.white); doc.setFont('helvetica', 'bold'); doc.setFontSize(11)
+      doc.text('NEUROHEX', ML, 9)
+
+      setTxt([180, 210, 245]); doc.setFont('helvetica', 'normal'); doc.setFontSize(7)
+      doc.text('AI-Assisted Neuroimaging Report', ML + 34, 9)
+
+      setTxt([200, 220, 250]); doc.setFont('courier', 'normal'); doc.setFontSize(6.5)
+      doc.text(`Patient: ${pid}   |   ${dt}`, PW - MR - 62, 9)
+    }
+
+    // ── Section header — left rule + label ──────────────────────────────────
     const sectionHeader = (label, yPos) => {
       if (yPos > PH - 30) { doc.addPage(); yPos = 20; drawPageBg(); drawPageHeader() }
-      setFill(C.border)
-      doc.rect(ML, yPos - 4, CW, 7, 'F')
-      setStroke(C.cyan); doc.setLineWidth(0.3)
-      doc.line(ML, yPos + 3, ML + CW, yPos + 3)
-      setTxt(C.cyan); setFont('bold', 8)
-      doc.text(label.toUpperCase(), ML + 2, yPos)
-      return yPos + 8
-    }
+      yPos += 3
 
-    // Key-value row in a card
-    const kvRow = (key, val, yPos, valColor = C.fg) => {
-      if (yPos > PH - 15) { doc.addPage(); yPos = 20; drawPageBg(); drawPageHeader() }
-      setTxt(C.fgDim); setFont('normal', 7.5)
-      doc.text(key, ML + 2, yPos)
-      setTxt(valColor); setFont('bold', 8)
-      doc.text(String(val), ML + 70, yPos)
-      return yPos + 5.5
-    }
+      // Full-width rule
+      setStroke(C.accent); doc.setLineWidth(0.5)
+      doc.line(ML, yPos, ML + CW, yPos)
 
-    // Metric bar
-    const metricBar = (label, val, unit, pct, color, yPos) => {
-      if (yPos > PH - 18) { doc.addPage(); yPos = 20; drawPageBg(); drawPageHeader() }
-      setTxt(C.fgDim); setFont('normal', 7)
-      doc.text(label, ML + 2, yPos)
-      setTxt(color); setFont('bold', 8.5)
-      doc.text(`${val} ${unit}`, ML + 58, yPos)
-      // track
-      setFill(C.border); setStroke(C.border); doc.setLineWidth(0)
-      doc.roundedRect(ML + 95, yPos - 3.2, 90, 3.5, 0.8, 0.8, 'F')
-      // fill
-      setFill(color)
-      const fw = clamp(pct, 0, 100) / 100 * 90
-      if (fw > 0) doc.roundedRect(ML + 95, yPos - 3.2, fw, 3.5, 0.8, 0.8, 'F')
+      // Label sitting just above rule
+      setTxt(C.accent); doc.setFont('helvetica', 'bold'); doc.setFontSize(7)
+      doc.text(label.toUpperCase(), ML, yPos - 1.5)
+
       return yPos + 6
     }
 
-    // Flag row
+    // ── Key / value row ──────────────────────────────────────────────────────
+    // Key in dark mid-grey helvetica, value in near-black courier bold
+    const kvRow = (key, val, yPos, valColor = C.ink) => {
+      if (yPos > PH - 15) { doc.addPage(); yPos = 20; drawPageBg(); drawPageHeader() }
+
+      setTxt(C.inkMid); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5)
+      doc.text(key, ML + 2, yPos)
+
+      setTxt(valColor); doc.setFont('courier', 'bold'); doc.setFontSize(8)
+      doc.text(String(val), ML + 68, yPos)
+
+      // Dotted leader between key and value
+      setStroke(C.rule); doc.setLineWidth(0.2)
+      doc.setLineDashPattern([0.5, 1.5], 0)
+      doc.line(ML + 2 + doc.getTextWidth(key) + 1, yPos - 1, ML + 65, yPos - 1)
+      doc.setLineDashPattern([], 0)
+
+      return yPos + 5.5
+    }
+
+    // ── Metric bar ───────────────────────────────────────────────────────────
+    // Label left, value centre, progress bar right with pale fill + colour fill
+    const metricBar = (label, val, unit, pct, color, paleFill, yPos) => {
+      if (yPos > PH - 18) { doc.addPage(); yPos = 20; drawPageBg(); drawPageHeader() }
+
+      setTxt(C.inkMid); doc.setFont('helvetica', 'normal'); doc.setFontSize(7)
+      doc.text(label, ML + 2, yPos)
+
+      setTxt(color); doc.setFont('courier', 'bold'); doc.setFontSize(8.5)
+      doc.text(`${val} ${unit}`, ML + 58, yPos)
+
+      // Track (pale tint of the colour)
+      const barX = ML + 97, barY = yPos - 3.2, barW = 85, barH = 3.8
+      setFill(paleFill); setStroke(paleFill); doc.setLineWidth(0)
+      doc.roundedRect(barX, barY, barW, barH, 1, 1, 'F')
+
+      // Fill
+      const fw = clamp(pct, 0, 100) / 100 * barW
+      if (fw > 0) {
+        setFill(color)
+        doc.roundedRect(barX, barY, fw, barH, 1, 1, 'F')
+      }
+
+      // Bar border
+      setStroke(C.rule); doc.setLineWidth(0.15)
+      doc.roundedRect(barX, barY, barW, barH, 1, 1, 'S')
+
+      return yPos + 6.5
+    }
+
+    // ── Flag row ─────────────────────────────────────────────────────────────
+    // Tinted background card + strong left border stripe
     const flagRow = (icon, title, desc, sev, yPos) => {
-      if (yPos > PH - 22) { doc.addPage(); yPos = 20; drawPageBg(); drawPageHeader() }
-      const col = sev === 'alert' ? C.red : sev === 'warn' ? C.amber : C.green
-      setFill(col.map(v => Math.round(v * 0.12 + 4)))
-      doc.roundedRect(ML, yPos - 4, CW, 12, 1, 1, 'F')
-      setStroke(col); doc.setLineWidth(0.4)
-      doc.line(ML, yPos - 4, ML, yPos + 8)
-      setTxt(col); setFont('bold', 8)
-      doc.text(`${icon} ${title}`, ML + 3, yPos)
-      setTxt(C.fgDim); setFont('normal', 7)
-      yPos = printWrapped(desc, ML + 3, yPos + 4.5, CW - 6, 4.2)
-      return yPos + 3
+      if (yPos > PH - 26) { doc.addPage(); yPos = 20; drawPageBg(); drawPageHeader() }
+
+      const col      = sev === 'alert' ? C.red   : sev === 'warn' ? C.amber   : C.green
+      const pale     = sev === 'alert' ? C.redPale : sev === 'warn' ? C.amberPale : C.greenPale
+      const cardH    = 14  // will grow with content; approximate
+      const stripeW  = 3
+
+      // Card fill
+      setFill(pale); setStroke(pale); doc.setLineWidth(0)
+      doc.roundedRect(ML, yPos - 4, CW, cardH, 1.5, 1.5, 'F')
+
+      // Left colour stripe
+      setFill(col)
+      doc.rect(ML, yPos - 4, stripeW, cardH, 'F')
+
+      // Title
+      setTxt(col); doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
+      doc.text(`${icon}  ${title}`, ML + stripeW + 3, yPos)
+
+      // Description
+      setTxt(C.ink); doc.setFont('helvetica', 'normal'); doc.setFontSize(7)
+      const endY = printWrapped(desc, ML + stripeW + 3, yPos + 4.5, CW - stripeW - 8, 4.2)
+
+      return endY + 4
     }
 
-    // ── Background fill (called on every page) ──────────────────────────────
-    function drawPageBg() {
-      setFill(C.bg); doc.rect(0, 0, PW, PH, 'F')
-    }
-
-    // ── Page 1 header band ──────────────────────────────────────────────────
-    function drawPageHeader() {
-      setFill([235, 245, 252]); doc.rect(0, 0, PW, 16, 'F')
-      setStroke(C.cyan); doc.setLineWidth(0.6)
-      doc.line(0, 16, PW, 16)
-      setTxt(C.cyan); setFont('bold', 10)
-      doc.text('NEUROHEX', ML, 10)
-      setTxt(C.fgDim); setFont('normal', 6.5)
-      doc.text('AI-Assisted MRI Analysis ', ML + 36, 10)
-      setTxt(C.fgDim); setFont('normal', 6)
-      doc.text(`Patient: ${pid}  |  ${dt}`, PW - MR - 60, 10)
-    }
-
-    // ── PAGE 1 ──────────────────────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════════════
+    // PAGE 1 — Cover / Summary
+    // ════════════════════════════════════════════════════════════════════════
     drawPageBg(); drawPageHeader()
-    y = 26
+    y = 22
 
-    // Hero score band
-    setFill([235, 245, 252]); doc.roundedRect(ML, y, CW, 22, 2, 2, 'F')
-    setStroke(C.cyan); doc.setLineWidth(0.4)
-    doc.roundedRect(ML, y, CW, 22, 2, 2, 'S')
+    // ── Hero score panel ────────────────────────────────────────────────────
     const scoreColor = d.normalcy >= 80 ? C.green : d.normalcy >= 60 ? C.amber : C.red
-    setTxt(scoreColor); setFont('bold', 28)
-    doc.text(String(d.normalcy), ML + 8, y + 15)
-    setTxt(C.fgDim); setFont('normal', 7)
-    doc.text('/100  NORMALCY INDEX', ML + 28, y + 10)
-    const desc = d.normalcy >= 80 ? 'Normal morphology' : d.normalcy >= 60 ? 'Mild deviation' : 'Significant deviation'
-    setTxt(scoreColor); setFont('bold', 9)
-    doc.text(desc, ML + 28, y + 16)
-    setTxt(C.fgDim); setFont('normal', 7)
-    doc.text(`${d.pct}th percentile  ·  ASI ${d.asi}%`, ML + 28, y + 21)
-    if (window.demoMode) {
-      setTxt(C.amber); setFont('bold', 7)
-      doc.text('⚠ DEMO MODE', PW - MR - 28, y + 10)
-    }
-    y += 28
+    const scorePale  = d.normalcy >= 80 ? C.greenPale : d.normalcy >= 60 ? C.amberPale : C.redPale
+    const scoreDesc  = d.normalcy >= 80 ? 'Normal morphology' : d.normalcy >= 60 ? 'Mild deviation detected' : 'Significant deviation detected'
 
-    // Patient info card
+    // Panel fill
+    setFill(scorePale); setStroke(scoreColor); doc.setLineWidth(0.6)
+    doc.roundedRect(ML, y, CW, 26, 2.5, 2.5, 'FD')
+
+    // Large score number
+    setTxt(scoreColor); doc.setFont('courier', 'bold'); doc.setFontSize(34)
+    doc.text(String(d.normalcy), ML + 8, y + 18)
+
+    // Scale label
+    setTxt(C.inkMid); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5)
+    doc.text('/ 100   NORMALCY INDEX', ML + 32, y + 10)
+
+    // Description
+    setTxt(scoreColor); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5)
+    doc.text(scoreDesc, ML + 32, y + 17)
+
+    // Sub-metrics
+    setTxt(C.inkMid); doc.setFont('courier', 'normal'); doc.setFontSize(7)
+    doc.text(`${d.pct}th percentile   ·   ASI ${d.asi}%`, ML + 32, y + 23)
+
+    if (window.demoMode) {
+      setTxt(C.amber); doc.setFont('helvetica', 'bold'); doc.setFontSize(7)
+      doc.text('⚠  DEMO MODE — Not for clinical use', PW - MR - 68, y + 5)
+    }
+
+    y += 32
+
+    // ── Patient information ──────────────────────────────────────────────────
     y = sectionHeader('Patient Information', y)
     y = kvRow('Patient ID',    pid,  y)
-    y = kvRow('Age / Sex',     `${age} / ${sex === 'M' ? 'Male' : sex === 'F' ? 'Female' : sex}`, y)
+    y = kvRow('Age / Sex',     `${age} yr  /  ${sex === 'M' ? 'Male' : sex === 'F' ? 'Female' : sex}`, y)
     y = kvRow('Scan Date',     dt,   y)
-    y = kvRow('Percentile',    `${d.pct}th`, y)
-    setTxt(C.fgDim); setFont('normal', 7)
-    doc.text('Clinical Notes:', ML + 2, y); y += 4
-    setTxt(C.fg)
-    y = printWrapped(notes, ML + 2, y, CW - 4, 4.5)
-    y += 4
-
-    // Brain age card
-    y = sectionHeader('Brain Age  (Cole et al. 2018, Nature Communications)', y)
-    const gapColor = Math.abs(brainAge.gap) <= 5 ? C.green : Math.abs(brainAge.gap) <= 10 ? C.amber : C.red
-    y = kvRow('Predicted Age',      `${brainAge.predicted} yr`,  y, C.cyan)
-    y = kvRow('Chronological Age',  `${brainAge.chronological || '?'} yr`, y, C.fg)
-    y = kvRow('Brain Age Gap',      `${brainAge.gap > 0 ? '+' : ''}${brainAge.gap} yr`, y, gapColor)
-    y += 4
-
-    // ── PAGE 2: Volumetrics ──────────────────────────────────────────────────
-    doc.addPage(); drawPageBg(); drawPageHeader(); y = 26
-
-    y = sectionHeader('Tissue Volumetrics  (SynthSeg · Billot et al., Nature Methods 2023)', y)
-    const tissueRows = [
-      { label: 'Total Brain',  val: d.brain.toFixed(1), pct: d.brain / 17,   color: C.cyan  },
-      { label: 'Grey Matter',  val: d.gm.toFixed(1),    pct: d.gm / 7,       color: C.green },
-      { label: 'White Matter', val: d.wm.toFixed(1),    pct: d.wm / 6,       color: C.amber },
-      { label: 'CSF',          val: d.csf.toFixed(1),   pct: d.csf / 2.5,    color: [68, 136, 255] },
-      { label: 'Deep Grey',    val: d.deep.toFixed(1),  pct: d.deep / 0.8,   color: [255, 107, 53]  },
-    ]
-    tissueRows.forEach(r => {
-      y = metricBar(r.label, r.val, 'cm³', r.pct * 100, r.color, y)
-    })
+    y = kvRow('Percentile',    `${d.pct}th`,  y)
     y += 2
 
-    // Norm reference
-    setTxt(C.fgDim); setFont('normal', 6.5)
-    doc.text(`Norm range for brain volume: ${d.norm.lo}–${d.norm.hi} cm³  ·  Age ${age}  ·  ${sex}`, ML + 2, y)
-    y += 8
+    setTxt(C.inkMid); doc.setFont('helvetica', 'bold'); doc.setFontSize(7)
+    doc.text('CLINICAL NOTES', ML + 2, y); y += 4.5
 
-    // Hippocampal section
-    y = sectionHeader('Hippocampal Analysis  (FreeSurfer labels 17 + 53)', y)
-    const lC2 = d.hipL < d.hipNorm.lo ? C.red : d.hipL < d.hipNorm.mean * 0.9 ? C.amber : C.green
-    const rC2 = d.hipR < d.hipNorm.lo ? C.red : d.hipR < d.hipNorm.mean * 0.9 ? C.amber : C.green
-    y = kvRow('Left Hippocampus',  `${d.hipL} cm³  (${d.hipLPct > 0 ? '+' : ''}${d.hipLPct}% vs norm)`, y, lC2)
-    y = kvRow('Right Hippocampus', `${d.hipR} cm³  (${d.hipRPct > 0 ? '+' : ''}${d.hipRPct}% vs norm)`, y, rC2)
-    y = kvRow('Asymmetry Index',   `${d.hipAsi}%  ${d.hipAsi >= 5 ? '⚠ Elevated (>5%)' : '✓ Normal (<5%)'}`, y, d.hipAsi >= 5 ? C.amber : C.green)
-    y = kvRow('Age/Sex Norm',      `${d.hipNorm.lo}–${d.hipNorm.hi} cm³/side`, y, C.fgDim)
+    setTxt(C.ink); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5)
+    y = printWrapped(notes, ML + 2, y, CW - 4, 4.8)
+    y += 5
+
+    // ── Brain age ────────────────────────────────────────────────────────────
+    y = sectionHeader('Brain Age  (Cole et al. 2018, Nature Communications)', y)
+    const gapAbs   = Math.abs(brainAge.gap)
+    const gapColor = gapAbs <= 5 ? C.green : gapAbs <= 10 ? C.amber : C.red
+    const gapLabel = brainAge.gap > 0 ? `+${brainAge.gap} yr  (accelerated ageing)` : `${brainAge.gap} yr  (decelerated ageing)`
+    y = kvRow('Predicted Brain Age',    `${brainAge.predicted} yr`, y, C.accent)
+    y = kvRow('Chronological Age',      `${brainAge.chronological || '?'} yr`, y, C.ink)
+    y = kvRow('Brain Age Gap (BAG)',    gapLabel, y, gapColor)
     y += 4
 
-    // Regional volumes
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PAGE 2 — Volumetrics
+    // ════════════════════════════════════════════════════════════════════════
+    doc.addPage(); drawPageBg(); drawPageHeader(); y = 22
+
+    y = sectionHeader('Tissue Volumetrics  (SynthSeg · Billot et al., Nature Methods 2023)', y)
+
+    const tissueRows = [
+      { label: 'Total Brain Volume', val: d.brain.toFixed(1), pct: d.brain / 17,  color: C.accent,       pale: C.accentPale },
+      { label: 'Grey Matter',        val: d.gm.toFixed(1),    pct: d.gm / 7,      color: C.green,        pale: C.greenPale  },
+      { label: 'White Matter',       val: d.wm.toFixed(1),    pct: d.wm / 6,      color: C.amber,        pale: C.amberPale  },
+      { label: 'CSF',                val: d.csf.toFixed(1),   pct: d.csf / 2.5,   color: [40,100,200],   pale: [220,232,255]},
+      { label: 'Deep Grey Matter',   val: d.deep.toFixed(1),  pct: d.deep / 0.8,  color: [160,60,0],     pale: [255,235,215]},
+    ]
+    tissueRows.forEach(r => {
+      y = metricBar(r.label, r.val, 'cm³', r.pct * 100, r.color, r.pale, y)
+    })
+    y += 3
+
+    // Norm reference box
+    setFill(C.offWhite); setStroke(C.rule); doc.setLineWidth(0.3)
+    doc.roundedRect(ML, y - 1, CW, 9, 1, 1, 'FD')
+    setTxt(C.inkMid); doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5)
+    doc.text(
+      `Reference range for age ${age} (${sex}):  ${d.norm.lo} – ${d.norm.hi} cm³  total brain volume`,
+      ML + 3, y + 4.5
+    )
+    y += 14
+
+    // ── Hippocampal analysis ─────────────────────────────────────────────────
+    y = sectionHeader('Hippocampal Analysis  (FreeSurfer labels 17 + 53)', y)
+
+    const lColor = d.hipL < d.hipNorm.lo ? C.red : d.hipL < d.hipNorm.mean * 0.9 ? C.amber : C.green
+    const rColor = d.hipR < d.hipNorm.lo ? C.red : d.hipR < d.hipNorm.mean * 0.9 ? C.amber : C.green
+
+    y = kvRow('Left Hippocampus',  `${d.hipL} cm³   (${d.hipLPct > 0 ? '+' : ''}${d.hipLPct}% vs norm)`, y, lColor)
+    y = kvRow('Right Hippocampus', `${d.hipR} cm³   (${d.hipRPct > 0 ? '+' : ''}${d.hipRPct}% vs norm)`, y, rColor)
+    y = kvRow('Asymmetry Index',   `${d.hipAsi}%   ${d.hipAsi >= 5 ? '⚠  Elevated (>5%)' : '✓  Normal (<5%)'}`, y, d.hipAsi >= 5 ? C.amber : C.green)
+    y = kvRow('Age / Sex Norm',    `${d.hipNorm.lo} – ${d.hipNorm.hi} cm³ per side`, y, C.inkMid)
+    y += 4
+
+    // ── Regional volumes ─────────────────────────────────────────────────────
     if (d.regions?.length) {
       y = sectionHeader('Regional Brain Volumes', y)
+      const hexToRgb = h => {
+        const m = h.replace('#','').match(/.{2}/g)
+        return m ? m.map(x => parseInt(x, 16)) : C.accent
+      }
+      // Darken a colour for the bar to ensure contrast
+      const darken = ([r,g,b]) => [Math.round(r*0.7), Math.round(g*0.7), Math.round(b*0.7)]
+      const lighten = ([r,g,b]) => [Math.min(255,Math.round(r*0.25+191)), Math.min(255,Math.round(g*0.25+191)), Math.min(255,Math.round(b*0.25+191))]
+
       d.regions.forEach(r => {
-        const hexToRgb = h => {
-          const m = h.replace('#','').match(/.{2}/g)
-          return m ? m.map(x => parseInt(x, 16)) : C.cyan
-        }
-        const col = hexToRgb(r.color)
-        y = metricBar(r.name, r.vol, 'cm³', r.vol / 6 * 100, col, y)
+        const rgb  = hexToRgb(r.color)
+        const dark = darken(rgb)
+        const pale = lighten(rgb)
+        y = metricBar(r.name, r.vol, 'cm³', r.vol / 6 * 100, dark, pale, y)
       })
     }
 
-    // ── PAGE 3: Clinical flags + WM + tumor ─────────────────────────────────
-    doc.addPage(); drawPageBg(); drawPageHeader(); y = 26
 
+    // ════════════════════════════════════════════════════════════════════════
+    // PAGE 3 — Clinical Flags, WM Hyperintensities, Tumor Screening
+    // ════════════════════════════════════════════════════════════════════════
+    doc.addPage(); drawPageBg(); drawPageHeader(); y = 22
+
+    // ── Clinical flags ───────────────────────────────────────────────────────
     y = sectionHeader(`Clinical Flags  (${active.length} raised)`, y)
+
     if (!active.length) {
-      setTxt(C.green); setFont('normal', 8)
-      doc.text('✓ No clinical flags raised', ML + 2, y); y += 8
+      setFill(C.greenPale); setStroke(C.green); doc.setLineWidth(0.3)
+      doc.roundedRect(ML, y - 1, CW, 10, 1.5, 1.5, 'FD')
+      setTxt(C.green); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5)
+      doc.text('✓   No clinical flags raised', ML + 5, y + 5.5)
+      y += 14
     } else {
       active.forEach(r => {
         const title = typeof r.title === 'function' ? r.title(d) : r.title
         const desc2 = typeof r.desc  === 'function' ? r.desc(d)  : r.desc
         y = flagRow(r.icon, title, desc2, r.sev, y)
+
         if (r.ddx?.length) {
-          setTxt(C.fgDim); setFont('normal', 6.5)
-          y = printWrapped('DDx: ' + r.ddx.join(' / '), ML + 5, y, CW - 10, 4)
+          setTxt(C.inkMid); doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5)
+          y = printWrapped('DDx:  ' + r.ddx.join('  /  '), ML + 7, y, CW - 12, 4)
+          y += 1
         }
         if (r.rec) {
-          setTxt(C.cyan); setFont('normal', 6.5)
-          y = printWrapped('↗ ' + r.rec, ML + 5, y, CW - 10, 4)
+          setTxt(C.accent); doc.setFont('helvetica', 'italic'); doc.setFontSize(6.5)
+          y = printWrapped('→  ' + r.rec, ML + 7, y, CW - 12, 4)
+          y += 1
         }
-        y += 2
+        y += 3
       })
     }
-    y += 4
+    y += 2
 
-    // WM hyperintensities
+    // ── WM hyperintensities ──────────────────────────────────────────────────
     y = sectionHeader(`WM Hyperintensity Candidates  (${anomalyRegions.length} detected)`, y)
+
     if (!anomalyRegions.length) {
-      setTxt(C.green); setFont('normal', 8)
-      doc.text('✓ No candidates above detection threshold', ML + 2, y); y += 8
+      setFill(C.greenPale); setStroke(C.green); doc.setLineWidth(0.3)
+      doc.roundedRect(ML, y - 1, CW, 10, 1.5, 1.5, 'FD')
+      setTxt(C.green); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5)
+      doc.text('✓   No candidates above detection threshold', ML + 5, y + 5.5)
+      y += 14
     } else {
       anomalyRegions.forEach(a => {
-        const col = a.severity === 'HIGH' ? C.red : C.amber
-        y = flagRow('⚠', `${a.label}  —  ${a.severity}`, `Signal ratio: ${a.signalRatio}%  ·  Voxel (${a.vx}, ${a.vy}, ${a.vz})`, a.severity === 'HIGH' ? 'alert' : 'warn', y)
+        const sev = a.severity === 'HIGH' ? 'alert' : 'warn'
+        y = flagRow('⚠', `${a.label}  —  ${a.severity}`,
+          `Signal ratio: ${a.signalRatio}%   ·   Voxel (${a.vx}, ${a.vy}, ${a.vz})`,
+          sev, y)
       })
     }
-    y += 4
+    y += 2
 
-    // Tumor
-    y = sectionHeader('Tumor Screening  (BraTS 2020)', y)
+    // ── Tumor screening ──────────────────────────────────────────────────────
+    y = sectionHeader('Tumor Screening  (BraTS 2020 ONNX)', y)
+
     if (!tumorData) {
-      setTxt(C.fgDim); setFont('normal', 8)
-      doc.text('Backend unavailable — screening skipped', ML + 2, y); y += 8
+      setFill(C.offWhite); setStroke(C.rule); doc.setLineWidth(0.3)
+      doc.roundedRect(ML, y - 1, CW, 10, 1.5, 1.5, 'FD')
+      setTxt(C.inkMid); doc.setFont('helvetica', 'italic'); doc.setFontSize(8)
+      doc.text('Backend unavailable — screening skipped', ML + 5, y + 5.5)
+      y += 14
     } else if (tumorData.classification === 'none') {
-      setTxt(C.green); setFont('normal', 8)
-      doc.text('✓ No significant tumor burden detected', ML + 2, y); y += 8
+      setFill(C.greenPale); setStroke(C.green); doc.setLineWidth(0.3)
+      doc.roundedRect(ML, y - 1, CW, 10, 1.5, 1.5, 'FD')
+      setTxt(C.green); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5)
+      doc.text('✓   No significant tumor burden detected', ML + 5, y + 5.5)
+      y += 14
     } else {
-      y = kvRow('Edema / Invasion',   `${tumorData.edema_cm3} cm³`,     y, C.amber)
-      y = kvRow('Enhancing Tumor',    `${tumorData.enhancing_cm3} cm³`, y, C.red)
-      y = kvRow('Necrotic Core',      `${tumorData.necrotic_cm3} cm³`,  y, [170, 100, 255])
-      y = kvRow('Classification',     tumorData.classification.toUpperCase(), y, C.red)
+      y = kvRow('Edema / Invasion',  `${tumorData.edema_cm3} cm³`,     y, C.amber)
+      y = kvRow('Enhancing Tumor',   `${tumorData.enhancing_cm3} cm³`, y, C.red)
+      y = kvRow('Necrotic Core',     `${tumorData.necrotic_cm3} cm³`,  y, C.purple)
+      y = kvRow('Classification',    tumorData.classification.toUpperCase(), y, C.red)
     }
 
-    // ── PAGE 4: AI clinical report (if generated) ────────────────────────────
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PAGE 4 — AI Clinical Report (if generated)
+    // ════════════════════════════════════════════════════════════════════════
     if (aiText) {
-      doc.addPage(); drawPageBg(); drawPageHeader(); y = 26
+      doc.addPage(); drawPageBg(); drawPageHeader(); y = 22
       y = sectionHeader('AI Clinical Report  (Rule-based / Groq / Gemini 2.0 Flash)', y)
-      setTxt(C.fg); setFont('normal', 7.5)
-      y = printWrapped(aiText, ML + 2, y, CW - 4, 4.8)
+
+      // Lightly tinted prose background
+      const aiLines   = doc.splitTextToSize(aiText, CW - 8)
+      const aiBlockH  = aiLines.length * 4.8 + 6
+      setFill(C.offWhite); setStroke(C.rule); doc.setLineWidth(0.2)
+      doc.roundedRect(ML, y - 2, CW, Math.min(aiBlockH, PH - y - 20), 1, 1, 'FD')
+
+      setTxt(C.ink); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5)
+      y = printWrapped(aiText, ML + 4, y + 3, CW - 8, 4.8)
     }
 
-    // ── Final page: disclaimer footer ────────────────────────────────────────
-    // Add footer to every page
+
+    // ════════════════════════════════════════════════════════════════════════
+    // Footer — every page
+    // ════════════════════════════════════════════════════════════════════════
     const totalPages = doc.internal.getNumberOfPages()
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i)
-      setFill([235, 245, 252]); doc.rect(0, PH - 12, PW, 12, 'F')
-      setStroke(C.border); doc.setLineWidth(0.3)
-      doc.line(0, PH - 12, PW, PH - 12)
-      setTxt(C.fgDim); setFont('normal', 5.5)
+
+      // Footer band
+      setFill(C.offWhite); setStroke(C.rule); doc.setLineWidth(0.3)
+      doc.rect(0, PH - 11, PW, 11, 'F')
+      doc.line(0, PH - 11, PW, PH - 11)
+
+      // Disclaimer
+      setTxt(C.inkMid); doc.setFont('helvetica', 'normal'); doc.setFontSize(5.5)
       doc.text(
-        'NeuroHEX v2.0 · AI-assisted analysis — NOT a substitute for clinical diagnosis · Consult a qualified neuroradiologist',
-        ML, PH - 5
+        'NeuroHEX v2.0  ·  AI-assisted analysis — NOT a substitute for clinical diagnosis  ·  Consult a qualified neuroradiologist',
+        ML, PH - 4.5
       )
-      doc.text(`Page ${i} / ${totalPages}`, PW - MR - 16, PH - 5)
+
+      // Page number
+      doc.setFont('courier', 'bold'); doc.setFontSize(6)
+      setTxt(C.accent)
+      doc.text(`${i} / ${totalPages}`, PW - MR - 10, PH - 4.5)
     }
 
     doc.save(`NeuroHEX_Report_${pid}_${dt}.pdf`)
