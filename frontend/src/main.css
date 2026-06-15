@@ -1520,3 +1520,7 @@ footer {
 .text-green { color: var(--green); }
 .text-red   { color: var(--red); }
 .text-amber { color: var(--amber); }
+img{
+  height: 850px;
+  width: 600px;
+}
