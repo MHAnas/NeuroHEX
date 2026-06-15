@@ -1,9 +1,8 @@
 {
     "rewrites": [
-        { "source": "/patient", "destination": "/patient.html" },
-        { "source": "/atlas", "destination": "/atlas.html" },
-        { "source": "/comparison", "destination": "/comparison.html" },
-        { "source": "/poster", "destination": "/poster.html" },
-        { "source": "/index", "destination": "/index.html" }
+        { "source": "/patient.html", "destination": "/patient.html" },
+        { "source": "/atlas.html", "destination": "/atlas.html" },
+        { "source": "/comparison.html", "destination": "/comparison.html" },
+        { "source": "/poster.html", "destination": "/poster.html" }
     ]
 }
